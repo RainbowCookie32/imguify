@@ -1,0 +1,38 @@
+[package]
+name = "imguify"
+version = "0.1.0"
+authors = ["RainbowCookie32 <matimoran03@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dirs = "3.0.1"
+rand = "0.8.3"
+glium = "0.29.0"
+serde = "1.0.125"
+dotenv = "0.15.0"
+futures = "0.3.13"
+
+imgui = "0.7.0"
+imgui-winit-support = "0.7.0"
+imgui-glium-renderer = "0.7.0"
+
+[dependencies.tokio]
+version = "1.4.0"
+default-features = false
+features = ["rt", "sync"]
+
+[dependencies.rspotify]
+version = "0.10.0"
+features = ["blocking"]
+
+[dependencies.librespot]
+git = "https://github.com/librespot-org/librespot"
+branch = "tokio_migration"
+features = ["pulseaudio-backend"]
+
+[dependencies.serde_any]
+version = "0.5"
+default-features = false
+features = ["ron"]

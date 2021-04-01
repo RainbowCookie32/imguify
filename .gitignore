@@ -1,0 +1,7 @@
+/target
+/.vscode
+
+*.env
+imguify
+imgui.ini
+.spotify_token_cache.json
