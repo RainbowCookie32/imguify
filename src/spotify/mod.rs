@@ -335,6 +335,30 @@ impl SpotifyHandler {
         }
     }
 
+    pub fn play_song_on_playlist(&mut self, playlist: String, track: &String) {
+        if let Some(plist) = self.playlist_data.iter().find(|p| p.id().to_base62() == playlist) {
+            if let Ok(mut lock) = self.player_handler.lock() {
+                for idx in 0..plist.entries_shuffled.len() {
+                    let entry = &plist.entries_shuffled[idx];
+
+                    if entry.to_base62() == *track {
+                        lock.song_in_player_idx = idx;
+                        break;
+                    }
+                }
+
+                let sid = SpotifyId::from_base62(track).unwrap();
+
+                lock.loaded = true;
+                lock.playing = true;
+                lock.queued_playlist = Some(plist.clone());
+                lock.song_in_player_id = Some(sid.clone());
+
+                lock.player.load(sid, true, 0);
+            }
+        }
+    }
+
     pub fn remove_track_from_playlist(&mut self, playlist: String, track: &String) {
         if let Some(_) = self.playlist_data.iter().find(|p| p.id().to_base62() == playlist) {
             let user_id = self.api_client.me().unwrap().id;

@@ -36,8 +36,8 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
 
                     let label = ImString::from(format!("Play##{}", entry.id()));
                     if ui.button(&label, [0.0, 0.0]) {
-                        if let Some(_) = app_state.spotify_handler.as_mut() {
-                            
+                        if let Some(handler) = app_state.spotify_handler.as_mut() {
+                            handler.play_song_on_playlist(plist.id().to_base62(), entry.id());
                         }
                     }
 
