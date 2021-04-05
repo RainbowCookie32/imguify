@@ -23,8 +23,8 @@ impl DataCacheHandler {
         }
     }
 
-    pub fn try_get_album(&self, id: String) -> Option<AlbumCacheUnit> {
-        if let Some(album) = self.album_cache.get(&id) {
+    pub fn try_get_album(&self, id: &String) -> Option<AlbumCacheUnit> {
+        if let Some(album) = self.album_cache.get(id) {
             Some(album.clone())
         }
         else {
@@ -32,8 +32,8 @@ impl DataCacheHandler {
         }
     }
 
-    pub fn try_get_artist(&self, id: String) -> Option<ArtistCacheUnit> {
-        if let Some(artist) = self.artist_cache.get(&id).clone() {
+    pub fn try_get_artist(&self, id: &String) -> Option<ArtistCacheUnit> {
+        if let Some(artist) = self.artist_cache.get(id).clone() {
             Some(artist.clone())
         }
         else {
@@ -41,8 +41,8 @@ impl DataCacheHandler {
         }
     }
 
-    pub fn try_get_track(&self, id: String) -> Option<TrackCacheUnit> {
-        if let Some(track) = self.track_cache.get(&id).clone() {
+    pub fn try_get_track(&self, id: &String) -> Option<TrackCacheUnit> {
+        if let Some(track) = self.track_cache.get(id).clone() {
             Some(track.clone())
         }
         else {
@@ -94,8 +94,7 @@ pub struct AlbumCacheUnit {
     id: String,
     name: String,
     artists: Vec<String>,
-    tracks: Vec<String>,
-    //covers: Vec<FileId>
+    tracks: Vec<String>
 }
 
 impl AlbumCacheUnit {
