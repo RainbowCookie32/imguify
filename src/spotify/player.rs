@@ -138,7 +138,7 @@ impl PlayerHandler {
             }
             PlayerEvent::EndOfTrack { .. } => {
                 if self.player_queue.position >= self.player_queue.tracks.len() {
-                    self.player_queue.position = 0;
+                    self.player_queue.reshuffle_tracks();
                 }
                 else {
                     self.player_queue.position += 1;
