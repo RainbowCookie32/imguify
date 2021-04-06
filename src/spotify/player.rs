@@ -27,8 +27,7 @@ pub struct PlayerQueue {
     position: usize,
     playlist_id: String,
 
-    tracks: Vec<PlaylistEntry>,
-    tracks_shuffled: Vec<PlaylistEntry>,
+    tracks_shuffled: Vec<PlaylistEntry>
 }
 
 impl PlayerQueue {
@@ -37,12 +36,12 @@ impl PlayerQueue {
             return;
         }
 
-        let (tracks, mut tracks_shuffled) = {
+        let mut tracks_shuffled = {
             if let Ok(data) = playlist.entries_data.read() {
-                (data.clone(), data.clone())
+                data.clone()
             }
             else {
-                (Vec::new(), Vec::new())
+                Vec::new()
             }
         };
         
@@ -51,7 +50,6 @@ impl PlayerQueue {
         self.position = 0;
         self.playlist_id = playlist.id().to_base62();
 
-        self.tracks = tracks;
         self.tracks_shuffled = tracks_shuffled;
     }
 
@@ -144,7 +142,7 @@ impl PlayerHandler {
                 self.track_playing = true;
             }
             PlayerEvent::EndOfTrack { .. } => {
-                if self.player_queue.position >= self.player_queue.tracks.len() {
+                if self.player_queue.position >= self.player_queue.tracks_shuffled.len() {
                     self.player_queue.reshuffle_tracks();
                 }
                 else {
@@ -171,7 +169,7 @@ impl PlayerHandler {
             }
             PlayerCommand::PrevTrack => {
                 if self.player_queue.position == 0 {
-                    self.player_queue.position = self.player_queue.tracks.len() - 1;
+                    self.player_queue.position = self.player_queue.tracks_shuffled.len() - 1;
                 }
                 else {
                     self.player_queue.position -= 1;
@@ -180,7 +178,7 @@ impl PlayerHandler {
                 self.load_track_and_play();
             }
             PlayerCommand::SkipTrack => {
-                if self.player_queue.position >= self.player_queue.tracks.len() {
+                if self.player_queue.position >= self.player_queue.tracks_shuffled.len() {
                     self.player_queue.reshuffle_tracks();
                 }
                 else {
