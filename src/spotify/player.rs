@@ -25,6 +25,7 @@ pub enum PlayerCommand {
 #[derive(Default)]
 pub struct PlayerQueue {
     position: usize,
+    playlist_id: String,
 
     tracks: Vec<PlaylistEntry>,
     tracks_shuffled: Vec<PlaylistEntry>,
@@ -32,6 +33,10 @@ pub struct PlayerQueue {
 
 impl PlayerQueue {
     pub fn fill_data(&mut self, playlist: Arc<PlaylistData>) {
+        if self.playlist_id == playlist.id().to_base62() {
+            return;
+        }
+
         let (tracks, mut tracks_shuffled) = {
             if let Ok(data) = playlist.entries_data.read() {
                 (data.clone(), data.clone())
@@ -44,6 +49,8 @@ impl PlayerQueue {
         tracks_shuffled.shuffle(&mut thread_rng());
         
         self.position = 0;
+        self.playlist_id = playlist.id().to_base62();
+
         self.tracks = tracks;
         self.tracks_shuffled = tracks_shuffled;
     }
