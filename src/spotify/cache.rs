@@ -11,6 +11,7 @@ pub struct DataCacheHandler {
     track_cache: HashMap<String, TrackCacheUnit>
 }
 
+#[allow(dead_code)]
 impl DataCacheHandler {
     pub fn init() -> DataCacheHandler {
         let cache_path = format!("{}/imguify/data/cache.ron", dirs::cache_dir().unwrap().to_str().unwrap());
@@ -97,6 +98,7 @@ pub struct AlbumCacheUnit {
     tracks: Vec<String>
 }
 
+#[allow(dead_code)]
 impl AlbumCacheUnit {
     pub fn from_spotify_album(album: Album) -> AlbumCacheUnit {
         AlbumCacheUnit {
@@ -142,11 +144,6 @@ impl ArtistCacheUnit {
         }
     }
 
-    /// Get a reference to the artist cache unit's id.
-    pub fn id(&self) -> &String {
-        &self.id
-    }
-
     /// Get a reference to the artist cache unit's name.
     pub fn name(&self) -> &String {
         &self.name
@@ -186,11 +183,6 @@ impl TrackCacheUnit {
     /// Get a reference to the track cache unit's duration.
     pub fn duration(&self) -> &i32 {
         &self.duration
-    }
-
-    /// Get a reference to the track cache unit's album.
-    pub fn album(&self) -> &String {
-        &self.album
     }
 
     /// Get a reference to the track cache unit's artists.
