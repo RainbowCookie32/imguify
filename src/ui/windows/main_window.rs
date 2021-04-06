@@ -1,5 +1,5 @@
 use crate::ui::AppState;
-use crate::spotify::PlayerCommand;
+use crate::spotify::player::PlayerCommand;
 
 use imgui::*;
 

@@ -1,16 +1,13 @@
 mod cache;
+pub mod player;
 
 use cache::DataCacheHandler;
+use player::{PlayerCommand, PlayerHandler};
 
 use std::sync::mpsc::Receiver;
 use std::sync::{Arc, Mutex, RwLock};
 
-use rand::prelude::*;
-
-use futures::FutureExt;
-
 use tokio::runtime::Runtime;
-use tokio::sync::mpsc::UnboundedReceiver;
 
 use librespot::core::cache::Cache;
 use librespot::core::session::Session;
@@ -18,192 +15,12 @@ use librespot::core::config::SessionConfig;
 use librespot::core::spotify_id::SpotifyId;
 use librespot::core::authentication::Credentials;
 
-use librespot::playback::audio_backend;
-use librespot::playback::player::{Player, PlayerEvent};
-use librespot::playback::config::{Bitrate, PlayerConfig, NormalisationType};
-
 use librespot::metadata::{Metadata, Artist, Playlist, Track};
 
 use rspotify::blocking::client::Spotify;
 use rspotify::blocking::oauth2::{SpotifyClientCredentials, SpotifyOAuth};
 
 use cache::{ArtistCacheUnit, TrackCacheUnit};
-
-pub enum PlayerCommand {
-    PlayPause,
-    PrevTrack,
-    SkipTrack,
-
-    StartPlaylist(Arc<PlaylistData>)
-}
-
-pub struct PlayerHandler {
-    player: Player,
-    
-    loaded: bool,
-    playing: bool,
-    queued_playlist: Option<Arc<PlaylistData>>,
-
-    song_in_player_id: Option<SpotifyId>,
-    song_in_player_idx: usize,
-
-    cmd_rx: Receiver<PlayerCommand>,
-    player_events: UnboundedReceiver<PlayerEvent>
-}
-
-impl PlayerHandler {
-    pub fn init(session: Session, cmd_rx: Receiver<PlayerCommand>) -> Arc<Mutex<PlayerHandler>> {
-        let mut player_cfg = PlayerConfig::default();
-
-        player_cfg.bitrate = Bitrate::Bitrate320;
-        
-        player_cfg.normalisation = true;
-        player_cfg.normalisation_type = NormalisationType::Track;
-
-        let backend = audio_backend::find(None).unwrap();
-        let (player, _) = Player::new(player_cfg, session, None, move || {
-            backend(None)
-        });
-
-        let player_events = player.get_player_event_channel();
-
-        let handler = PlayerHandler {
-            player,
-
-            loaded: false,
-            playing: false,
-            queued_playlist: None,
-
-            song_in_player_id: None,
-            song_in_player_idx: 0,
-
-            cmd_rx,
-            player_events
-        };
-
-        let handler = Arc::from(Mutex::from(handler));
-        let player_handler = handler.clone();
-
-        std::thread::spawn(move || {
-            let player = player_handler;
-
-            loop {
-                std::thread::sleep(std::time::Duration::from_millis(100));
-
-                if let Ok(mut lock) = player.lock() {
-                    if let Some(event) = lock.player_events.recv().now_or_never() {
-                        if let Some(event) = event {
-                            lock.handle_player_event(event);
-                        }
-                    }
-
-                    if let Ok(command) = lock.cmd_rx.try_recv() {
-                        lock.handle_player_command(command);
-                    }
-                }
-            }
-        });
-
-        handler
-    }
-
-    pub fn handle_player_event(&mut self, event: PlayerEvent) {
-        match event {
-            PlayerEvent::Stopped { .. } => {
-                self.loaded = false;
-                self.playing = false;
-            }
-            PlayerEvent::Started { .. } => {
-                self.loaded = true;
-                self.playing = true;
-            }
-            PlayerEvent::EndOfTrack { .. } => {
-                if let Some(playlist) = self.queued_playlist.as_ref() {
-                    self.song_in_player_idx += 1;
-
-                    if self.song_in_player_idx >= playlist.entries_shuffled.len() {
-                        self.song_in_player_idx = 0;
-                    }
-
-                    self.song_in_player_id = Some(playlist.entries_shuffled[self.song_in_player_idx]);
-
-                    self.player.load(playlist.entries_shuffled[self.song_in_player_idx], true, 0);
-                    self.player.play();
-                }
-            }
-            _ => {}
-        }
-    }
-
-    pub fn handle_player_command(&mut self, command: PlayerCommand) {
-        match command {
-            PlayerCommand::PlayPause => {
-                if self.playing {
-                    self.player.pause();
-                    self.playing = false;
-                }
-                else {
-                    self.player.play();
-                    self.playing = true;
-                }
-            }
-            PlayerCommand::PrevTrack => {
-                if let Some(playlist) = self.queued_playlist.as_ref() {
-                    if self.song_in_player_idx == 0 {
-                        self.song_in_player_idx = playlist.entries_shuffled.len() - 1;
-                    }
-                    else {
-                        self.song_in_player_idx -= 1;
-                    }
-
-                    self.song_in_player_id = Some(playlist.entries_shuffled[self.song_in_player_idx]);
-
-                    self.player.load(playlist.entries_shuffled[self.song_in_player_idx], true, 0);
-                    self.player.play();
-                }
-            }
-            PlayerCommand::SkipTrack => {
-                if let Some(playlist) = self.queued_playlist.as_ref() {
-                    self.song_in_player_idx += 1;
-
-                    if self.song_in_player_idx >= playlist.entries_shuffled.len() {
-                        self.song_in_player_idx = 0;
-                    }
-
-                    self.song_in_player_id = Some(playlist.entries_shuffled[self.song_in_player_idx]);
-
-                    self.player.load(playlist.entries_shuffled[self.song_in_player_idx], true, 0);
-                    self.player.play();
-                }
-            }
-            PlayerCommand::StartPlaylist(p) => {
-                self.loaded = true;
-                self.song_in_player_idx = 0;
-
-                self.song_in_player_id = Some(p.entries_shuffled[self.song_in_player_idx]);
-
-                self.player.load(p.entries_shuffled[self.song_in_player_idx], true, 0);
-                self.player.play();
-
-                self.queued_playlist = Some(p);
-            }
-        }
-    }
-
-    pub fn get_current_song(&self) -> Option<PlaylistEntry> {
-        if let (Some(plist), Some(sid)) = (self.queued_playlist.as_ref(), self.song_in_player_id.as_ref()) {
-            if let Ok(lock) = plist.entries_data.lock() {
-                for song in lock.iter() {
-                    if song.id() == &sid.to_base62() {
-                        return Some(song.clone());
-                    }
-                }
-            }
-        }
-
-        None
-    }
-}
 
 pub struct SpotifyHandler {
     rt: Runtime,
@@ -290,7 +107,7 @@ impl SpotifyHandler {
 
     pub fn get_playback_status(&self) -> bool {
         if let Ok(lock) = self.player_handler.try_lock() {
-            lock.loaded
+            lock.is_queue_loaded()
         }
         else {
             true
@@ -303,8 +120,6 @@ impl SpotifyHandler {
 
     pub fn fetch_user_playlists(&mut self) {
         if let Ok(playlists) = self.api_client.current_user_playlists(5, 0) {
-            let mut rng = thread_rng();
-
             self.playlist_data.clear();
 
             for item in playlists.items {
@@ -312,9 +127,6 @@ impl SpotifyHandler {
 
                 if let Ok(list) = self.rt.block_on(Playlist::get(&self.spotify_session, id.clone())) {
                     let entries = list.tracks;
-                    let mut entries_shuffled = entries.clone();
-
-                    entries_shuffled.shuffle(&mut rng);
 
                     self.playlist_data.push(Arc::new(
                         PlaylistData {
@@ -323,8 +135,7 @@ impl SpotifyHandler {
                             session: self.spotify_session.clone(),
 
                             entries,
-                            entries_shuffled,
-                            entries_data: Arc::new(Mutex::new(Vec::new())),
+                            entries_data: Arc::new(RwLock::new(Vec::new())),
 
                             data_fetched: RwLock::new(false),
                             data_fetching: RwLock::new(false)
@@ -338,23 +149,9 @@ impl SpotifyHandler {
     pub fn play_song_on_playlist(&mut self, playlist: String, track: &String) {
         if let Some(plist) = self.playlist_data.iter().find(|p| p.id().to_base62() == playlist) {
             if let Ok(mut lock) = self.player_handler.lock() {
-                for idx in 0..plist.entries_shuffled.len() {
-                    let entry = &plist.entries_shuffled[idx];
-
-                    if entry.to_base62() == *track {
-                        lock.song_in_player_idx = idx;
-                        break;
-                    }
-                }
-
                 let sid = SpotifyId::from_base62(track).unwrap();
 
-                lock.loaded = true;
-                lock.playing = true;
-                lock.queued_playlist = Some(plist.clone());
-                lock.song_in_player_id = Some(sid.clone());
-
-                lock.player.load(sid, true, 0);
+                lock.play_track_from_playlist(plist.clone(), sid);
             }
         }
     }
@@ -377,8 +174,7 @@ pub struct PlaylistData {
     session: Session,
 
     entries: Vec<SpotifyId>,
-    entries_shuffled: Vec<SpotifyId>,
-    entries_data: Arc<Mutex<Vec<PlaylistEntry>>>,
+    entries_data: Arc<RwLock<Vec<PlaylistEntry>>>,
 
     data_fetched: RwLock<bool>,
     data_fetching: RwLock<bool>
@@ -418,7 +214,7 @@ impl PlaylistData {
                     }
                 };
 
-                if let Ok(mut lock) = self.entries_data.lock() {
+                if let Ok(mut lock) = self.entries_data.write() {
                     let entry = PlaylistEntry {
                         track: track_data,
                         artist: artist_data
@@ -436,7 +232,7 @@ impl PlaylistData {
     }
 
     /// Get a reference to the playlist data's entries data.
-    pub fn entries_data(&self) -> &Arc<Mutex<Vec<PlaylistEntry>>> {
+    pub fn entries_data(&self) -> &Arc<RwLock<Vec<PlaylistEntry>>> {
         &self.entries_data
     }
 

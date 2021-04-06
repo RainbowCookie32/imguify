@@ -7,7 +7,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
         ui.text("Songs");
 
         if let Some(plist) = app_state.playlist_data.as_ref() {
-            if let Ok(lock) = plist.entries_data().lock() {
+            if let Ok(lock) = plist.entries_data().try_read() {
                 let data_len = lock.len();
                 let entries_len = plist.entries().len();
 

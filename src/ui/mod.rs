@@ -1,6 +1,7 @@
 mod windows;
 
-use crate::spotify::*;
+use crate::spotify::player::PlayerCommand;
+use crate::spotify::{SpotifyHandler, PlaylistData};
 
 use std::sync::Arc;
 use std::sync::mpsc::Sender;
