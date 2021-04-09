@@ -1,7 +1,9 @@
-mod cache;
+pub mod api;
+pub mod cache;
 pub mod player;
 
-use cache::DataCacheHandler;
+use api::SpotifyAPIHandler;
+use cache::APICacheHandler;
 use player::{PlayerCommand, PlayerHandler};
 
 use std::sync::mpsc::Receiver;
@@ -15,60 +17,50 @@ use librespot::core::config::SessionConfig;
 use librespot::core::spotify_id::SpotifyId;
 use librespot::core::authentication::Credentials;
 
-use librespot::metadata::{Metadata, Artist, Playlist, Track};
+use librespot::metadata::{Metadata, Playlist};
 
-use rspotify::blocking::client::Spotify;
-use rspotify::blocking::oauth2::{SpotifyClientCredentials, SpotifyOAuth};
+use rspotify::model::artist::FullArtist;
 
-use cache::{ArtistCacheUnit, TrackCacheUnit};
+use cache::TrackCacheUnit;
 
 pub struct SpotifyHandler {
     rt: Runtime,
-    api_client: Spotify,
     spotify_session: Session,
 
+    api_handler: Arc<SpotifyAPIHandler>,
     playlist_data: Vec<Arc<PlaylistData>>,
-    player_handler: Arc<Mutex<PlayerHandler>>,
-    cache_handler: Arc<Mutex<DataCacheHandler>>
+    player_handler: Arc<Mutex<PlayerHandler>>
 }
 
 impl SpotifyHandler {
     pub fn init(username: String, password: String, cmd_rx: Receiver<PlayerCommand>) -> Option<SpotifyHandler> {
         let rt = Runtime::new().unwrap();
-        let cache_path = format!("{}/imguify/audio", dirs::cache_dir().unwrap().to_str().unwrap());
-        let cache = Cache::new(None, Some(cache_path)).unwrap();
 
-        let mut oauth = SpotifyOAuth::default()
-            .scope("playlist-read-private")
-            .redirect_uri("http://localhost:8888/callback")
-            .client_id(&std::env::var("CLIENT_ID").expect("Failed to load CLIENT_ID value."))
-            .client_secret(&std::env::var("CLIENT_SECRET").expect("Failed to load CLIENT_SECRET value."))
-            .build()
-        ;
+        let player_cache_path = format!("{}/imguify/audio", dirs::cache_dir().unwrap().to_str().unwrap());
+        let player_cache = Cache::new(None, Some(player_cache_path)).unwrap();
 
-        if let Some(token) = rspotify::blocking::util::get_token(&mut oauth) {
-            let api_credentials = SpotifyClientCredentials::default().token_info(token);
-            let api_client = Spotify::default().client_credentials_manager(api_credentials).build();
+        let api_cache_handler = Arc::new(Mutex::new(APICacheHandler::init()));
+
+        if let Some(api_handler) = SpotifyAPIHandler::init(api_cache_handler.clone()) {
+            let api_handler = Arc::new(api_handler);
 
             let mut session_cfg = SessionConfig::default();
             session_cfg.device_id = String::from("imguify-cookie");
 
             let credentials = Credentials::with_password(username, password);
 
-            if let Ok(session) = rt.block_on(Session::connect(session_cfg, credentials, Some(cache))) {
+            if let Ok(session) = rt.block_on(Session::connect(session_cfg, credentials, Some(player_cache))) {
                 let spotify_session = session;
                 let player_handler = PlayerHandler::init(spotify_session.clone(), cmd_rx);
-                let cache_handler = Arc::new(Mutex::new(DataCacheHandler::init()));
                 
                 return Some(
                     SpotifyHandler {
                         rt,
-                        api_client,
                         spotify_session,
-        
+                        
+                        api_handler,
                         playlist_data: Vec::new(),
-                        player_handler,
-                        cache_handler
+                        player_handler
                     }
                 )
             }
@@ -114,12 +106,12 @@ impl SpotifyHandler {
         }
     }
 
-    pub fn get_cache_handler(&self) -> Arc<Mutex<DataCacheHandler>> {
-        self.cache_handler.clone()
+    pub fn get_api_handler(&self) -> Arc<SpotifyAPIHandler> {
+        self.api_handler.clone()
     }
 
     pub fn fetch_user_playlists(&mut self) {
-        if let Ok(playlists) = self.api_client.current_user_playlists(5, 0) {
+        if let Some(playlists) = self.api_handler.get_user_playlists() {
             self.playlist_data.clear();
 
             for item in playlists.items {
@@ -132,7 +124,6 @@ impl SpotifyHandler {
                         PlaylistData {
                             id,
                             title: list.name,
-                            session: self.spotify_session.clone(),
 
                             entries,
                             entries_data: Arc::new(RwLock::new(Vec::new())),
@@ -146,6 +137,12 @@ impl SpotifyHandler {
         }
     }
 
+    pub fn play_single_track(&mut self, track: TrackCacheUnit) {
+        if let Ok(mut lock) = self.player_handler.lock() {
+            lock.play_single_track(track);
+        }
+    }
+
     pub fn play_song_on_playlist(&mut self, playlist: String, track: &String) {
         if let Some(plist) = self.playlist_data.iter().find(|p| p.id().to_base62() == playlist) {
             if let Ok(mut lock) = self.player_handler.lock() {
@@ -156,22 +153,43 @@ impl SpotifyHandler {
         }
     }
 
-    pub fn remove_track_from_playlist(&mut self, playlist: String, track: &String) {
-        if let Some(_) = self.playlist_data.iter().find(|p| p.id().to_base62() == playlist) {
-            let user_id = self.api_client.me().unwrap().id;
-            let track_ids = [track.clone()];
-            
-            if let Ok(_) = self.api_client.user_playlist_remove_all_occurrences_of_tracks(&user_id, &playlist, &track_ids, None) {
-                self.fetch_user_playlists();
+    pub fn remove_track_from_playlist(&mut self, playlist_id: &String, track_id: &String) {
+        if self.api_handler.remove_track_from_playlist(playlist_id, track_id) {
+            self.fetch_user_playlists();
+        }
+    }
+
+    pub fn search_artists(&self, query: String) -> Vec<FullArtist> {
+        if let Some(results) = self.api_handler.search_artists(query) {
+            return results.items;
+        }
+
+        Vec::new()
+    }
+
+    pub fn get_artist_data(&mut self, artist: String) -> Vec<TrackCacheUnit> {
+        let mut results = Vec::new();
+
+        if let Some(albums) = self.api_handler.get_all_albums_for_artist(artist) {
+            for album in albums.items {
+                if let Some(data) = self.api_handler.get_album(album.id.unwrap()) {
+                    for track in data.tracks() {
+                        if let Some(track) = self.api_handler.get_track(track.clone()) {
+                            results.push(track);
+                        }
+                    }
+                }
             }
         }
+
+        results.sort_by(|a, b| b.popularity().cmp(a.popularity()));
+        results
     }
 }
 
 pub struct PlaylistData {
     id: SpotifyId,
     title: String,
-    session: Session,
 
     entries: Vec<SpotifyId>,
     entries_data: Arc<RwLock<Vec<PlaylistEntry>>>,
@@ -181,7 +199,7 @@ pub struct PlaylistData {
 }
 
 impl PlaylistData {
-    pub fn fetch_data(&self, cache: Arc<Mutex<DataCacheHandler>>) {
+    pub fn fetch_data(&self, api_handler: Arc<SpotifyAPIHandler>) {
         if let (Ok(mut fetching), Ok(fetched)) = (self.data_fetching.write(), self.data_fetched.read()) {
             if *fetched || *fetching {
                 return;
@@ -191,35 +209,16 @@ impl PlaylistData {
             }
         }
 
-        let rt = Runtime::new().unwrap();
-
-        for id in self.entries.iter() {
-            if let Ok(mut lock) = cache.lock() {
-                let track_data = {
-                    if let Some(cached_track) = lock.try_get_track(&id.to_base62()) {
-                        cached_track
-                    }
-                    else {
-                        lock.add_track_unit(rt.block_on(Track::get(&self.session, *id)).unwrap())
-                    }
-                };
-
-                let artist_data = {
-                    if let Some(cached_artist) = lock.try_get_artist(&track_data.artists()[0]) {
-                        cached_artist
-                    }
-                    else {
-                        let id = SpotifyId::from_base62(&track_data.artists()[0]).unwrap();
-                        lock.add_artist_unit(rt.block_on(Artist::get(&self.session, id)).unwrap())
-                    }
-                };
-
+        for id in self.entries.iter() {            
+            if let Some(track_data) = api_handler.get_track(id.to_base62()) {
                 if let Ok(mut lock) = self.entries_data.write() {
+                    let artist_data = track_data.artists()[0].clone();
+
                     let entry = PlaylistEntry {
                         track: track_data,
                         artist: artist_data
                     };
-
+    
                     lock.push(entry);
                 }
             }
@@ -250,7 +249,7 @@ impl PlaylistData {
 #[derive(Clone)]
 pub struct PlaylistEntry {
     track: TrackCacheUnit,
-    artist: ArtistCacheUnit
+    artist: String
 }
 
 impl PlaylistEntry {
@@ -263,10 +262,10 @@ impl PlaylistEntry {
     }
 
     pub fn artist(&self) -> &String {
-        self.artist.name()
+        &self.artist
     }
 
-    pub fn duration(&self) -> &i32 {
+    pub fn duration(&self) -> &u32 {
         self.track.duration()
     }
 }

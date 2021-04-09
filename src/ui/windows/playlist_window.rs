@@ -38,6 +38,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
                     if ui.button(&label, [0.0, 0.0]) {
                         if let Some(handler) = app_state.spotify_handler.as_mut() {
                             handler.play_song_on_playlist(plist.id().to_base62(), entry.id());
+                            app_state.show_player_window = true;
                         }
                     }
 
@@ -46,7 +47,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
                     let label = ImString::from(format!("Remove##{}", entry.id()));
                     if ui.button(&label, [0.0, 0.0]) {
                         if let Some(handler) = app_state.spotify_handler.as_mut() {
-                            handler.remove_track_from_playlist(plist.id().to_base62(), entry.id());
+                            handler.remove_track_from_playlist(&plist.id().to_base62(), entry.id());
                         }
                     }
 

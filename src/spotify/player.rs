@@ -12,6 +12,7 @@ use librespot::playback::player::{Player, PlayerEvent};
 use librespot::playback::config::{Bitrate, NormalisationType, PlayerConfig};
 use tokio::sync::mpsc::UnboundedReceiver;
 
+use crate::spotify::cache::TrackCacheUnit;
 use crate::spotify::{PlaylistData, PlaylistEntry};
 
 pub enum PlayerCommand {
@@ -209,6 +210,17 @@ impl PlayerHandler {
         self.player_queue.tracks_shuffled.len() > 0
     }
 
+    pub fn play_single_track(&mut self, track: TrackCacheUnit) {
+        self.player_queue.tracks_shuffled = vec![
+            PlaylistEntry {
+                track,
+                artist: String::new()
+            }
+        ];
+
+        self.load_track_and_play();
+    }
+
     pub fn play_track_from_playlist(&mut self, playlist: Arc<PlaylistData>, track: SpotifyId) {
         self.player_queue.fill_data(playlist);
         self.player_queue.set_position_with_id(track);
@@ -217,12 +229,14 @@ impl PlayerHandler {
     }
 
     fn load_track_and_play(&mut self) {
-        let track_id = self.player_queue.tracks_shuffled[self.player_queue.position].id();
-        let track_id = SpotifyId::from_base62(track_id).unwrap();
+        if let Some(track_id) = self.player_queue.tracks_shuffled.get(self.player_queue.position) {
+            let track_id = track_id.id();
+            let track_id = SpotifyId::from_base62(track_id).unwrap();
 
-        self.player.load(track_id, true, 0);
-        self.player.play();
+            self.player.load(track_id, true, 0);
+            self.player.play();
 
-        self.track_playing = true;
+            self.track_playing = true;
+        }
     }
 }

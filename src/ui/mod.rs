@@ -1,5 +1,6 @@
 mod windows;
 
+use crate::spotify::cache::TrackCacheUnit;
 use crate::spotify::player::PlayerCommand;
 use crate::spotify::{SpotifyHandler, PlaylistData};
 
@@ -18,6 +19,8 @@ use glium::glutin::window::WindowBuilder;
 use glium::glutin::event::{Event, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 
+use rspotify::model::artist::FullArtist;
+
 const MEDIA_SKIP: u32 = 163;
 const MEDIA_PAUSE: u32 = 164;
 const MEDIA_PREVIOUS: u32 = 165;
@@ -26,6 +29,16 @@ pub struct AppState {
     username: ImString,
     password: ImString,
     login_failed: bool,
+
+    search_query: ImString,
+    search_results: Vec<FullArtist>,
+
+    search_artist_tracks: Vec<TrackCacheUnit>,
+
+    show_artist_window: bool,
+    show_search_window: bool,
+    show_player_window: bool,
+    show_playlist_window: bool,
 
     playlist_data: Option<Arc<PlaylistData>>,
     spotify_handler: Option<SpotifyHandler>,
@@ -38,6 +51,16 @@ impl AppState {
             username: ImString::new(""),
             password: ImString::new(""),
             login_failed: false,
+
+            search_query: ImString::new(""),
+            search_results: Vec::new(),
+
+            search_artist_tracks: Vec::new(),
+
+            show_artist_window: false,
+            show_search_window: false,
+            show_player_window: false,
+            show_playlist_window: false,
 
             playlist_data: None,
             spotify_handler: None,
@@ -111,7 +134,19 @@ impl App {
                 else {
                     windows::main_window::build(&ui, &mut app_state);
 
-                    if app_state.playlist_data.is_some() {
+                    if app_state.show_artist_window {
+                        windows::artist_window::build(&ui, &mut app_state);
+                    }
+
+                    if app_state.show_search_window {
+                        windows::search_window::build(&ui, &mut app_state);
+                    }
+
+                    if app_state.show_player_window {
+                        windows::player_window::build(&ui, &mut app_state);
+                    }
+
+                    if app_state.show_playlist_window {
                         windows::playlist_window::build(&ui, &mut app_state);
                     }
                 }
