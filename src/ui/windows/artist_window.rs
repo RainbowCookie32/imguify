@@ -6,7 +6,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
     Window::new(im_str!("Artist Info")).size([420.0, 300.0], Condition::FirstUseEver).build(&ui, || {
         ui.columns(4, im_str!("artist_tracks_columns"), true);
 
-        for entry in app_state.search_artist_tracks.iter() {
+        for entry in app_state.search_artist_page_tracks.iter() {
             ui.text(entry.name());
             ui.next_column();
 

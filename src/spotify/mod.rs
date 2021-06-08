@@ -19,6 +19,7 @@ use librespot::core::authentication::Credentials;
 
 use librespot::metadata::{Metadata, Playlist};
 
+use rspotify::model::track::FullTrack;
 use rspotify::model::artist::FullArtist;
 
 use cache::TrackCacheUnit;
@@ -37,7 +38,7 @@ impl SpotifyHandler {
         let rt = Runtime::new().unwrap();
 
         let player_cache_path = format!("{}/imguify/audio", dirs::cache_dir().unwrap().to_str().unwrap());
-        let player_cache = Cache::new(None, Some(player_cache_path)).unwrap();
+        let player_cache = Cache::new(None, Some(player_cache_path), None).unwrap();
 
         let api_cache_handler = Arc::new(Mutex::new(APICacheHandler::init()));
 
@@ -157,6 +158,14 @@ impl SpotifyHandler {
         if self.api_handler.remove_track_from_playlist(playlist_id, track_id) {
             self.fetch_user_playlists();
         }
+    }
+
+    pub fn search_tracks(&self, query: String) -> Vec<FullTrack> {
+        if let Some(results) = self.api_handler.search_tracks(query) {
+            return results.items;
+        }
+
+        Vec::new()
     }
 
     pub fn search_artists(&self, query: String) -> Vec<FullArtist> {

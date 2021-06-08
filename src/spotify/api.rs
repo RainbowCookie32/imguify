@@ -107,6 +107,22 @@ impl SpotifyAPIHandler {
         self.api_client.artist_albums(&artist_id, None, None, Some(10), None).ok()
     }
 
+    pub fn search_tracks(&self, query: String) -> Option<Page<FullTrack>> {
+        if let Ok(results) = self.api_client.search(&query, SearchType::Track, 10, 0, None, None) {
+            match results {
+                SearchResult::Tracks(data) => {
+                    Some(data)
+                }
+                _ => {
+                    None
+                }
+            }
+        }
+        else {
+            None
+        }
+    }
+
     pub fn search_artists(&self, query: String) -> Option<Page<FullArtist>> {
         if let Ok(results) = self.api_client.search(&query, SearchType::Artist, 10, 0, None, None) {
             match results {
