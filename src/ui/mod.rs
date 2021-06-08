@@ -19,6 +19,7 @@ use glium::glutin::window::WindowBuilder;
 use glium::glutin::event::{Event, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 
+use rspotify::model::track::FullTrack;
 use rspotify::model::artist::FullArtist;
 
 const MEDIA_SKIP: u32 = 163;
@@ -31,9 +32,9 @@ pub struct AppState {
     login_failed: bool,
 
     search_query: ImString,
-    search_results: Vec<FullArtist>,
-
-    search_artist_tracks: Vec<TrackCacheUnit>,
+    search_results_tracks: Vec<FullTrack>,
+    search_results_artists: Vec<FullArtist>,
+    search_artist_page_tracks: Vec<TrackCacheUnit>,
 
     show_artist_window: bool,
     show_search_window: bool,
@@ -53,9 +54,9 @@ impl AppState {
             login_failed: false,
 
             search_query: ImString::new(""),
-            search_results: Vec::new(),
-
-            search_artist_tracks: Vec::new(),
+            search_results_tracks: Vec::new(),
+            search_results_artists: Vec::new(),
+            search_artist_page_tracks: Vec::new(),
 
             show_artist_window: false,
             show_search_window: false,
@@ -118,6 +119,55 @@ impl App {
 
         let mut app_state = AppState::new();
 
+        let id = imgui.fonts().add_font(&[
+            FontSource::DefaultFontData {
+                config: Some(
+                    FontConfig {
+                        size_pixels: 13.0,
+                        ..FontConfig::default()
+                    }
+                )
+            },
+            FontSource::TtfData {
+                data: include_bytes!("../../NotoSansCJKsc-Regular.otf"),
+                size_pixels: 13.0,
+                config: Some(
+                    FontConfig {
+                        rasterizer_multiply: 1.75,
+                        size_pixels: 13.0,
+                        glyph_ranges: FontGlyphRanges::chinese_simplified_common(),
+                        ..FontConfig::default()
+                    }
+                )
+            },
+            FontSource::TtfData {
+                data: include_bytes!("../../NotoSansCJKjp-Regular.otf"),
+                size_pixels: 13.0,
+                config: Some(
+                    FontConfig {
+                        rasterizer_multiply: 1.75,
+                        size_pixels: 13.0,
+                        glyph_ranges: FontGlyphRanges::japanese(),
+                        ..FontConfig::default()
+                    }
+                )
+            },
+            FontSource::TtfData {
+                data: include_bytes!("../../NotoSansCJKkr-Regular.otf"),
+                size_pixels: 13.0,
+                config: Some(
+                    FontConfig {
+                        rasterizer_multiply: 1.75,
+                        size_pixels: 13.0,
+                        glyph_ranges: FontGlyphRanges::korean(),
+                        ..FontConfig::default()
+                    }
+                )
+            }
+        ]);
+
+        renderer.reload_font_texture(&mut imgui).unwrap();
+
         event_loop.run(move |event, _, control_flow| match event {
             Event::MainEventsCleared => {
                 let gl_window = display.gl_window();
@@ -127,6 +177,8 @@ impl App {
             }
             Event::RedrawRequested(_) => {
                 let ui = imgui.frame();
+                
+                let token = ui.push_font(id);
 
                 if app_state.spotify_handler.is_none() {
                     windows::login_window::build(&ui, &mut app_state);
@@ -150,6 +202,8 @@ impl App {
                         windows::playlist_window::build(&ui, &mut app_state);
                     }
                 }
+
+                token.pop(&ui);
 
                 let gl_window = display.gl_window();
                 let mut target = display.draw();

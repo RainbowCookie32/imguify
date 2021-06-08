@@ -6,10 +6,10 @@ use futures::FutureExt;
 
 use librespot::core::session::Session;
 use librespot::core::spotify_id::SpotifyId;
-
 use librespot::playback::audio_backend;
 use librespot::playback::player::{Player, PlayerEvent};
 use librespot::playback::config::{AudioFormat, Bitrate, PlayerConfig};
+
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::spotify::cache::TrackCacheUnit;

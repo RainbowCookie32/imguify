@@ -28,9 +28,7 @@ version = "0.10.0"
 features = ["blocking"]
 
 [dependencies.librespot]
-git = "https://github.com/librespot-org/librespot"
-branch = "tokio_migration"
-features = ["pulseaudio-backend"]
+version = "0.2.0"
 
 [dependencies.serde_any]
 version = "0.5"
