@@ -9,7 +9,7 @@ use librespot::core::spotify_id::SpotifyId;
 
 use librespot::playback::audio_backend;
 use librespot::playback::player::{Player, PlayerEvent};
-use librespot::playback::config::{Bitrate, NormalisationType, PlayerConfig};
+use librespot::playback::config::{AudioFormat, Bitrate, PlayerConfig};
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::spotify::cache::TrackCacheUnit;
@@ -87,13 +87,10 @@ impl PlayerHandler {
         let mut player_cfg = PlayerConfig::default();
 
         player_cfg.bitrate = Bitrate::Bitrate320;
-        
-        player_cfg.normalisation = true;
-        player_cfg.normalisation_type = NormalisationType::Track;
 
         let backend = audio_backend::find(None).unwrap();
         let (player, _) = Player::new(player_cfg, session, None, move || {
-            backend(None)
+            backend(None, AudioFormat::default())
         });
 
         let player_events = player.get_player_event_channel();
