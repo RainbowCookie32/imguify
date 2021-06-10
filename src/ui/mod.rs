@@ -14,17 +14,12 @@ use imgui_winit_support::{HiDpiMode, WinitPlatform};
 
 use glium::glutin;
 use glium::{Display, Surface};
-use glium::glutin::event::ElementState;
 use glium::glutin::window::WindowBuilder;
 use glium::glutin::event::{Event, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 
 use rspotify::model::track::FullTrack;
 use rspotify::model::artist::FullArtist;
-
-const MEDIA_SKIP: u32 = 163;
-const MEDIA_PAUSE: u32 = 164;
-const MEDIA_PREVIOUS: u32 = 165;
 
 pub struct AppState {
     username: ImString,
@@ -215,31 +210,6 @@ impl App {
 
                 renderer.render(&mut target, draw_data).unwrap();
                 target.finish().unwrap();
-            }
-            Event::DeviceEvent { event: glium::glutin::event::DeviceEvent::Key(input), ..} => {
-                if input.state == ElementState::Pressed {
-                    match input.scancode {
-                        MEDIA_SKIP => {
-                            if let Some(tx) = app_state.player_tx.as_ref() {
-                                tx.send(PlayerCommand::SkipTrack).unwrap();
-                            }
-                        }
-                        MEDIA_PAUSE => {
-                            if let Some(tx) = app_state.player_tx.as_ref() {
-                                tx.send(PlayerCommand::PlayPause).unwrap();
-                            }
-                        }
-                        MEDIA_PREVIOUS => {
-                            if let Some(tx) = app_state.player_tx.as_ref() {
-                                tx.send(PlayerCommand::PrevTrack).unwrap();
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-
-                let gl_window = display.gl_window();
-                platform.handle_event(imgui.io_mut(), gl_window.window(), &event);
             }
             Event::WindowEvent { event: WindowEvent::CloseRequested, ..} => {
                 *control_flow = ControlFlow::Exit
