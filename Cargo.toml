@@ -7,21 +7,21 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dirs = "3.0.1"
+dirs = "3.0.2"
 rand = "0.8.3"
-glium = "0.29.0"
-serde = "1.0.125"
+glium = "0.29.1"
+serde = "1.0.126"
 dotenv = "0.15.0"
-futures = "0.3.13"
+futures = "0.3.15"
 
 imgui = "0.7.0"
-imgui-winit-support = "0.7.0"
+imgui-winit-support = "0.7.1"
 imgui-glium-renderer = "0.7.0"
 
 [dependencies.tokio]
-version = "1.4.0"
+version = "1.6.1"
 default-features = false
-features = ["rt", "sync"]
+features = ["sync"]
 
 [dependencies.rspotify]
 version = "0.10.0"
@@ -31,6 +31,6 @@ features = ["blocking"]
 version = "0.2.0"
 
 [dependencies.serde_any]
-version = "0.5"
+version = "0.5.0"
 default-features = false
 features = ["ron"]
