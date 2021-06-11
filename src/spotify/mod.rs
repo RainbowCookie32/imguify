@@ -1,3 +1,6 @@
+#[cfg(target_os = "linux")]
+mod dbus;
+
 pub mod api;
 pub mod cache;
 pub mod player;
@@ -6,8 +9,8 @@ use api::SpotifyAPIHandler;
 use cache::APICacheHandler;
 use player::{PlayerCommand, PlayerHandler};
 
-use std::sync::mpsc::Receiver;
 use std::sync::{Arc, Mutex, RwLock};
+use std::sync::mpsc::{Sender, Receiver};
 
 use tokio::runtime::Runtime;
 
@@ -34,7 +37,7 @@ pub struct SpotifyHandler {
 }
 
 impl SpotifyHandler {
-    pub fn init(username: String, password: String, cmd_rx: Receiver<PlayerCommand>) -> Option<SpotifyHandler> {
+    pub fn init(username: String, password: String, cmd_tx: Sender<PlayerCommand>, cmd_rx: Receiver<PlayerCommand>) -> Option<SpotifyHandler> {
         let rt = Runtime::new().unwrap();
 
         let player_cache_path = format!("{}/imguify/audio", dirs::cache_dir().unwrap().to_str().unwrap());
@@ -53,6 +56,10 @@ impl SpotifyHandler {
             if let Ok(session) = rt.block_on(Session::connect(session_cfg, credentials, Some(player_cache))) {
                 let spotify_session = session;
                 let player_handler = PlayerHandler::init(spotify_session.clone(), cmd_rx);
+
+                if cfg!(target_os = "linux") {
+                    dbus::init_connection(cmd_tx);
+                }
                 
                 return Some(
                     SpotifyHandler {

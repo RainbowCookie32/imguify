@@ -112,8 +112,6 @@ impl PlayerHandler {
             let player = player_handler;
 
             loop {
-                std::thread::sleep(std::time::Duration::from_millis(100));
-
                 if let Ok(mut lock) = player.lock() {
                     if let Some(event) = lock.player_events.recv().now_or_never() {
                         if let Some(event) = event {
@@ -125,6 +123,8 @@ impl PlayerHandler {
                         lock.handle_player_command(command);
                     }
                 }
+
+                std::thread::sleep(std::time::Duration::from_millis(10));
             }
         });
 
