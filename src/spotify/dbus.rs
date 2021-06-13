@@ -1,9 +1,9 @@
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Sender;
 use std::collections::HashMap;
 
-use zvariant::Value;
+use zvariant::*;
 use zbus::{fdo, dbus_interface};
 
 use crate::spotify::player::{PlayerCommand, PlayerHandler};
@@ -94,20 +94,52 @@ impl MPRISHandler {
 
         if let Ok(lock) = self.player_handler.lock() {
             if let Some(track) = lock.get_current_song() {
-                let title = Value::Str(zvariant::Str::from(track.title().clone()));
-                let artist = Value::Array(zvariant::Array::from(vec![track.artist().clone()]));
-                let track_id = Value::ObjectPath(zvariant::ObjectPath::try_from("/org/mpris/MediaPlayer2/imguify").unwrap());
+                let title = Value::Str(Str::from(track.title().clone()));
+                let artist = Value::Array(Array::from(vec![track.artist().clone()]));
+                let track_id = Value::ObjectPath(ObjectPath::try_from("/org/mpris/MediaPlayer2/imguify").unwrap());
                 let track_length = Value::U64(*track.duration() as u64 * 1000);
 
                 map.insert(String::from("mpris:trackid"), track_id);
                 map.insert(String::from("mpris:length"), track_length);
                 map.insert(String::from("xesam:title"), title);
                 map.insert(String::from("xesam:artist"), artist);
-                map.insert(String::from("xesam:album"), Value::Str(zvariant::Str::from("")));
+                map.insert(String::from("xesam:album"), Value::Str(Str::from("")));
             }
         }
 
         map
+    }
+
+    pub fn update_metadata(&self) -> zbus::Result<()> {
+        let invalidated: Vec<String> = vec![];
+        let mut changed = HashMap::new();
+        let mut metadata_dict = Dict::new(Str::signature(), Value::signature());
+
+        if let Ok(lock) = self.player_handler.lock() {
+            if let Some(track) = lock.get_current_song() {
+                let title = Value::Value(Box::new(Value::Str(Str::from(track.title().clone()))));
+                let artist = Value::Value(Box::new(Value::Array(Array::from(vec![track.artist().clone()]))));
+                let track_id = Value::Value(Box::new(Value::ObjectPath(ObjectPath::try_from("/org/mpris/MediaPlayer2/imguify").unwrap())));
+                let track_length = Value::Value(Box::new(Value::U64(*track.duration() as u64 * 1000)));
+
+                metadata_dict.append(Value::Str(Str::from("mpris:trackid")), track_id).unwrap();
+                metadata_dict.append(Value::Str(Str::from("mpris:length")), track_length).unwrap();
+                metadata_dict.append(Value::Str(Str::from("xesam:title")), title).unwrap();
+                metadata_dict.append(Value::Str(Str::from("xesam:artist")), artist.clone()).unwrap();
+                metadata_dict.append(Value::Str(Str::from("xesam:albumArtist")), artist).unwrap();
+            }
+
+            println!("updated metadata");
+        }
+
+        changed.insert("Metadata", Value::from(metadata_dict));
+
+        zbus::ObjectServer::local_node_emit_signal(
+            None,
+            "org.freedesktop.DBus.Properties",
+            "PropertiesChanged",
+            &("org.mpris.MediaPlayer2.Player", changed, invalidated)
+        )
     }
 
     #[dbus_interface(property, name = "CanGoNext")]
@@ -143,24 +175,28 @@ impl MPRISHandler {
 
 #[cfg(target_os = "linux")]
 pub fn init_connection(events_tx: Sender<PlayerCommand>, player_handler: Arc<Mutex<PlayerHandler>>) {
-    std::thread::spawn(move || {
-        let events_tx = events_tx;
-
-        if let Ok(connection) = zbus::Connection::new_session() {
+    if let Ok(connection) = zbus::Connection::new_session() {
+        std::thread::spawn(move || {
+            let events_tx = events_tx;
+    
             if let Ok(proxy) = fdo::DBusProxy::new(&connection) {
                 if proxy.request_name(DBUS_NAME, fdo::RequestNameFlags::ReplaceExisting.into()).is_ok() {
                     let iface = MPRISHandler { events_tx, player_handler };
                     let mut object_server = zbus::ObjectServer::new(&connection);
                     
-                    if object_server.at("/org/mpris/MediaPlayer2", iface).is_ok() {
+                    if object_server.at(&"/org/mpris/MediaPlayer2".try_into().unwrap(), iface).is_ok() {
                         loop {
                             if let Err(err) = object_server.try_handle_next() {
                                 println!("{}", err);
                             }
+
+                            object_server.with(&"/org/mpris/MediaPlayer2".try_into().unwrap(), |i: &MPRISHandler| {
+                                i.update_metadata()
+                            }).unwrap();
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 }

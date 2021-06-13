@@ -14,7 +14,7 @@ serde = "1.0.126"
 dotenv = "0.15.0"
 futures = "0.3.15"
 
-zbus = "2.0.0-beta.3"
+zbus = "1.9.1"
 zvariant = "2.6.0"
 
 imgui = "0.7.0"
