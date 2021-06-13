@@ -9,11 +9,13 @@ edition = "2018"
 [dependencies]
 dirs = "3.0.2"
 rand = "0.8.3"
-zbus = "1.9.1"
 glium = "0.29.1"
 serde = "1.0.126"
 dotenv = "0.15.0"
 futures = "0.3.15"
+
+zbus = "2.0.0-beta.3"
+zvariant = "2.6.0"
 
 imgui = "0.7.0"
 imgui-winit-support = "0.7.1"

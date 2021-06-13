@@ -58,7 +58,7 @@ impl SpotifyHandler {
                 let player_handler = PlayerHandler::init(spotify_session.clone(), cmd_rx);
 
                 if cfg!(target_os = "linux") {
-                    dbus::init_connection(cmd_tx);
+                    dbus::init_connection(cmd_tx, player_handler.clone());
                 }
                 
                 return Some(
