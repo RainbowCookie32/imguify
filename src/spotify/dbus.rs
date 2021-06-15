@@ -128,8 +128,6 @@ impl MPRISHandler {
                 metadata_dict.append(Value::Str(Str::from("xesam:artist")), artist.clone()).unwrap();
                 metadata_dict.append(Value::Str(Str::from("xesam:albumArtist")), artist).unwrap();
             }
-
-            println!("updated metadata");
         }
 
         changed.insert("Metadata", Value::from(metadata_dict));

@@ -5,10 +5,10 @@ use imgui::*;
 
 pub fn build(ui: &Ui, app_state: &mut AppState) {
     if app_state.login_failed {
-        ui.open_popup(im_str!("login_failed_popup"));
+        ui.open_popup(im_str!("Couldn't log in"));
     }
 
-    ui.popup_modal(im_str!("login_failed_popup")).build(|| {
+    ui.popup_modal(im_str!("Couldn't log in")).build(|| {
         ui.text("Error logging in, please try again.");
 
         if ui.button(im_str!("Ok"), [0.0, 0.0]) {
