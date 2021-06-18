@@ -40,9 +40,10 @@ impl SpotifyHandler {
     pub fn init(username: String, password: String, cmd_tx: Sender<PlayerCommand>, cmd_rx: Receiver<PlayerCommand>) -> Option<SpotifyHandler> {
         let rt = Runtime::new().unwrap();
 
-        let player_cache_path = format!("{}/imguify/audio", dirs::cache_dir().unwrap().to_str().unwrap());
-        let player_cache = Cache::new(None, Some(player_cache_path), None).unwrap();
+        let mut player_cache_path = dirs::cache_dir().expect("Couldn't get cache dir");
+        player_cache_path.push("/imguify/audio");
 
+        let player_cache = Cache::new(None, Some(player_cache_path), None).unwrap();
         let api_cache_handler = Arc::new(Mutex::new(APICacheHandler::init()));
 
         if let Some(api_handler) = SpotifyAPIHandler::init(api_cache_handler.clone()) {
@@ -154,9 +155,9 @@ impl SpotifyHandler {
     pub fn play_song_on_playlist(&mut self, playlist: String, track: &String) {
         if let Some(plist) = self.playlist_data.iter().find(|p| p.id().to_base62() == playlist) {
             if let Ok(mut lock) = self.player_handler.lock() {
-                let sid = SpotifyId::from_base62(track).unwrap();
-
-                lock.play_track_from_playlist(plist.clone(), sid);
+                if let Ok(track) = SpotifyId::from_base62(track) {
+                    lock.play_track_from_playlist(plist.clone(), track);
+                }
             }
         }
     }
@@ -188,10 +189,12 @@ impl SpotifyHandler {
 
         if let Some(albums) = self.api_handler.get_all_albums_for_artist(artist) {
             for album in albums.items {
-                if let Some(data) = self.api_handler.get_album(album.id.unwrap()) {
-                    for track in data.tracks() {
-                        if let Some(track) = self.api_handler.get_track(track.clone()) {
-                            results.push(track);
+                if let Some(id) = album.id {
+                    if let Some(data) = self.api_handler.get_album(id) {
+                        for track in data.tracks() {
+                            if let Some(track) = self.api_handler.get_track(track.clone()) {
+                                results.push(track);
+                            }
                         }
                     }
                 }

@@ -54,12 +54,15 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             ui.text(format!("{}", track.album.name));
             ui.next_column();
 
-            let label = ImString::from(format!("Play##{}", track.id.clone().unwrap()));
-            if ui.button(&label, [0.0, 0.0]) {
-                if let Some(handler) = app_state.spotify_handler.as_mut() {
-                    if let Some(track) = handler.get_api_handler().get_track(track.id.clone().unwrap()) {
-                        app_state.show_player_window = true;
-                        handler.play_single_track(track);
+            if let Some(id) = track.id.as_ref() {
+                let label = ImString::from(format!("Play##{}", id));
+
+                if ui.button(&label, [0.0, 0.0]) {
+                    if let Some(handler) = app_state.spotify_handler.as_mut() {
+                        if let Some(track) = handler.get_api_handler().get_track(id.clone()) {
+                            app_state.show_player_window = true;
+                            handler.play_single_track(track);
+                        }
                     }
                 }
             }

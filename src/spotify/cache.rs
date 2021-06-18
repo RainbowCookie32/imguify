@@ -14,7 +14,8 @@ pub struct APICacheHandler {
 
 impl APICacheHandler {
     pub fn init() -> APICacheHandler {
-        let cache_path = format!("{}/imguify/data/cache.ron", dirs::cache_dir().unwrap().to_str().unwrap());
+        let mut cache_path = dirs::cache_dir().expect("Couldn't get cache dir");
+        cache_path.push("/imguify/data/cache.ron");
 
         if let Ok(deserialized) = serde_any::from_file(cache_path) {
             deserialized
@@ -52,22 +53,24 @@ impl APICacheHandler {
         }
     }
 
-    pub fn add_track_unit(&mut self, track: FullTrack) -> TrackCacheUnit {
-        let id = track.id.clone().unwrap();
+    pub fn add_track_unit(&mut self, track: FullTrack) -> Option<TrackCacheUnit> {
+        let id = track.id.clone().unwrap_or_else(|| String::new());
         let unit = TrackCacheUnit::from_api_data(track);
 
-        self.track_cache.insert(id, unit.clone());
-        self.write_cache_data();
+        if let Some(unit) = unit.as_ref() {
+            self.track_cache.insert(id, unit.clone());
+            self.write_cache_data();
+        }
 
         unit
     }
 
     fn write_cache_data(&self) {
-        let cache_path = format!("{}/imguify/data", dirs::cache_dir().unwrap().to_str().unwrap());
-        let cache_file = format!("{}/cache.ron", cache_path);
+        let mut cache_path = dirs::cache_dir().expect("Couldn't get cache dir");
+        cache_path.push("/imguify/data/cache.ron");
 
-        std::fs::create_dir_all(cache_path).expect("Failed to create cache dir");
-        serde_any::to_file_pretty(cache_file, self).expect("Failed to write cache data");
+        std::fs::create_dir_all(&cache_path).expect("Failed to create cache dir");
+        serde_any::to_file_pretty(cache_path, self).expect("Failed to write cache data");
     }
 }
 
@@ -86,7 +89,7 @@ impl AlbumCacheUnit {
             id: album.id,
             name: album.name,
             
-            tracks: album.tracks.items.into_iter().map(|t| t.id.unwrap()).collect(),
+            tracks: album.tracks.items.into_iter().map(|t| t.id.unwrap_or_else(|| String::new())).collect(),
             artists: album.artists.into_iter().map(|a| a.name).collect()
         }
     }
@@ -108,14 +111,21 @@ pub struct TrackCacheUnit {
 }
 
 impl TrackCacheUnit {
-    pub fn from_api_data(track: FullTrack) -> TrackCacheUnit {
-        TrackCacheUnit {
-            id: track.id.unwrap(),
-            name: track.name,
-            duration: track.duration_ms,
-            popularity: track.popularity,
-            album: track.album.id.unwrap(),
-            artists: track.artists.into_iter().map(|a| a.name).collect()
+    pub fn from_api_data(track: FullTrack) -> Option<TrackCacheUnit> {
+        if let (Some(id), Some(album)) = (track.id, track.album.id) {
+            Some(
+                TrackCacheUnit {
+                    id,
+                    name: track.name,
+                    duration: track.duration_ms,
+                    popularity: track.popularity,
+                    album,
+                    artists: track.artists.into_iter().map(|a| a.name).collect()
+                }
+            )
+        }
+        else {
+            None
         }
     }
 

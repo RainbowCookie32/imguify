@@ -228,12 +228,13 @@ impl PlayerHandler {
     fn load_track_and_play(&mut self) {
         if let Some(track_id) = self.player_queue.tracks_shuffled.get(self.player_queue.position) {
             let track_id = track_id.id();
-            let track_id = SpotifyId::from_base62(track_id).unwrap();
 
-            self.player.load(track_id, true, 0);
-            self.player.play();
-
-            self.track_playing = true;
+            if let Ok(track_id) = SpotifyId::from_base62(track_id) {
+                self.player.load(track_id, true, 0);
+                self.player.play();
+    
+                self.track_playing = true;
+            }
         }
     }
 }

@@ -37,7 +37,9 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
                             let plist = handler.get_playlist(idx).unwrap();
                             let api_handler = handler.get_api_handler();
                             
-                            tx.send(PlayerCommand::StartPlaylist(plist.clone())).unwrap();
+                            if let Err(error) = tx.send(PlayerCommand::StartPlaylist(plist.clone())) {
+                                println!("{}", error.to_string());
+                            }
     
                             std::thread::spawn(move || {
                                 plist.fetch_data(api_handler);

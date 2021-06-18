@@ -62,7 +62,7 @@ impl SpotifyAPIHandler {
             }
             else {                
                 if let Some(track_data) = self.api_lookup_track(track_id) {
-                    Some(lock.add_track_unit(track_data))
+                    lock.add_track_unit(track_data)
                 }
                 else {
                     None

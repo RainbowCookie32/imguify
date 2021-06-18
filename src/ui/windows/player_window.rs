@@ -33,7 +33,9 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
 
         if ui.button(im_str!("«"), [0.0, 0.0]) {
             if let Some(tx) = app_state.player_tx.as_ref() {
-                tx.send(PlayerCommand::PrevTrack).unwrap();
+                if let Err(error) = tx.send(PlayerCommand::PrevTrack) {
+                    println!("{}", error.to_string());
+                }
             }
         }
 
@@ -41,7 +43,9 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
 
         if ui.button(im_str!("►"), [0.0, 0.0]) {
             if let Some(tx) = app_state.player_tx.as_ref() {
-                tx.send(PlayerCommand::PlayPause).unwrap();
+                if let Err(error) = tx.send(PlayerCommand::PlayPause) {
+                    println!("{}", error.to_string());
+                }
             }
         }
 
@@ -49,7 +53,9 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
 
         if ui.button(im_str!("»"), [0.0, 0.0]) {
             if let Some(tx) = app_state.player_tx.as_ref() {
-                tx.send(PlayerCommand::SkipTrack).unwrap();
+                if let Err(error) = tx.send(PlayerCommand::SkipTrack) {
+                    println!("{}", error.to_string());
+                }
             }
         }
     });
