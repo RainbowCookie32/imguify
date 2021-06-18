@@ -15,7 +15,7 @@ pub struct APICacheHandler {
 impl APICacheHandler {
     pub fn init() -> APICacheHandler {
         let mut cache_path = dirs::cache_dir().expect("Couldn't get cache dir");
-        cache_path.push("/imguify/data/cache.ron");
+        cache_path.push("imguify/data/cache.ron");
 
         if let Ok(deserialized) = serde_any::from_file(cache_path) {
             deserialized
@@ -67,7 +67,7 @@ impl APICacheHandler {
 
     fn write_cache_data(&self) {
         let mut cache_path = dirs::cache_dir().expect("Couldn't get cache dir");
-        cache_path.push("/imguify/data/cache.ron");
+        cache_path.push("imguify/data/cache.ron");
 
         std::fs::create_dir_all(&cache_path).expect("Failed to create cache dir");
         serde_any::to_file_pretty(cache_path, self).expect("Failed to write cache data");

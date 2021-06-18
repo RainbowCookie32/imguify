@@ -41,7 +41,7 @@ impl SpotifyHandler {
         let rt = Runtime::new().unwrap();
 
         let mut player_cache_path = dirs::cache_dir().expect("Couldn't get cache dir");
-        player_cache_path.push("/imguify/audio");
+        player_cache_path.push("imguify/audio");
 
         let player_cache = Cache::new(None, Some(player_cache_path), None).unwrap();
         let api_cache_handler = Arc::new(Mutex::new(APICacheHandler::init()));
