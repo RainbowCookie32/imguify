@@ -46,7 +46,7 @@ impl SpotifyHandler {
         let player_cache = Cache::new(None, Some(player_cache_path), None).unwrap();
         let api_cache_handler = Arc::new(Mutex::new(APICacheHandler::init()));
 
-        if let Some(api_handler) = SpotifyAPIHandler::init(api_cache_handler.clone()) {
+        if let Some(api_handler) = SpotifyAPIHandler::init(api_cache_handler) {
             let api_handler = Arc::new(api_handler);
 
             let mut session_cfg = SessionConfig::default();
@@ -79,12 +79,7 @@ impl SpotifyHandler {
     }
 
     pub fn get_playlist(&mut self, plist: usize) -> Option<Arc<PlaylistData>> {
-        if let Some(plist) = self.playlist_data.get(plist) {
-            Some(plist.clone())
-        }
-        else {
-            None
-        }
+        self.playlist_data.get(plist).cloned()
     }
 
     pub fn get_playlists_names(&self) -> Vec<String> {
@@ -126,7 +121,7 @@ impl SpotifyHandler {
             for item in playlists.items {
                 let id = SpotifyId::from_base62(&item.id).expect("Failed to parse id");
 
-                if let Ok(list) = self.rt.block_on(Playlist::get(&self.spotify_session, id.clone())) {
+                if let Ok(list) = self.rt.block_on(Playlist::get(&self.spotify_session, id)) {
                     let entries = list.tracks;
 
                     self.playlist_data.push(Arc::new(
@@ -152,7 +147,7 @@ impl SpotifyHandler {
         }
     }
 
-    pub fn play_song_on_playlist(&mut self, playlist: String, track: &String) {
+    pub fn play_song_on_playlist(&mut self, playlist: String, track: &str) {
         if let Some(plist) = self.playlist_data.iter().find(|p| p.id().to_base62() == playlist) {
             if let Ok(mut lock) = self.player_handler.lock() {
                 if let Ok(track) = SpotifyId::from_base62(track) {
@@ -162,7 +157,7 @@ impl SpotifyHandler {
         }
     }
 
-    pub fn remove_track_from_playlist(&mut self, playlist_id: &String, track_id: &String) {
+    pub fn remove_track_from_playlist(&mut self, playlist_id: &str, track_id: &String) {
         if self.api_handler.remove_track_from_playlist(playlist_id, track_id) {
             self.fetch_user_playlists();
         }

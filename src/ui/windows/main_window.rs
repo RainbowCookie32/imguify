@@ -5,7 +5,7 @@ use imgui::*;
 
 pub fn build(ui: &Ui, app_state: &mut AppState) {
     if let Some(handler) = app_state.spotify_handler.as_mut() {
-        if handler.get_playlists_names().len() == 0 {
+        if handler.get_playlists_names().is_empty() {
             handler.fetch_user_playlists();
         }
     }
@@ -20,13 +20,11 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             if let Some(handler) = app_state.spotify_handler.as_mut() {
                 let plists = handler.get_playlists_names();
 
-                if plists.len() > 0 {
+                if !plists.is_empty() {
                     show_tree_separator = false;
                 }
 
-                for idx in 0..plists.len() {
-                    let plist = &plists[idx];
-    
+                for (idx, plist) in plists.iter().enumerate() {
                     ui.text(plist);
                     ui.same_line(200.0);
     

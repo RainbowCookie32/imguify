@@ -48,9 +48,9 @@ impl SpotifyAPIHandler {
         self.api_client.current_user_playlists(10, 0).ok()
     }
 
-    pub fn remove_track_from_playlist(&self, playlist_id: &String, track_id: &String) -> bool {
+    pub fn remove_track_from_playlist(&self, playlist_id: &str, track_id: &str) -> bool {
         let user_id = self.api_client.me().unwrap().id;
-        self.api_client.user_playlist_remove_all_occurrences_of_tracks(&user_id, playlist_id, &[track_id.clone()], None).is_ok()
+        self.api_client.user_playlist_remove_all_occurrences_of_tracks(&user_id, playlist_id, &[track_id.to_string()], None).is_ok()
     }
 
     pub fn get_track(&self, track_id: String) -> Option<TrackCacheUnit> {
@@ -60,13 +60,11 @@ impl SpotifyAPIHandler {
             if cache_result.is_some() {
                 cache_result
             }
-            else {                
-                if let Some(track_data) = self.api_lookup_track(track_id) {
-                    lock.add_track_unit(track_data)
-                }
-                else {
-                    None
-                }
+            else if let Some(track_data) = self.api_lookup_track(track_id) {
+                lock.add_track_unit(track_data)
+            }
+            else {
+                None
             }
         }
         else {
@@ -85,13 +83,8 @@ impl SpotifyAPIHandler {
             if cache_result.is_some() {
                 cache_result
             }
-            else {                
-                if let Some(album_data) = self.api_lookup_album(album_id) {
-                    Some(lock.add_album_unit(album_data))
-                }
-                else {
-                    None
-                }
+            else {
+                self.api_lookup_album(album_id).map(|album_data| lock.add_album_unit(album_data))
             }
         }
         else {
@@ -109,13 +102,11 @@ impl SpotifyAPIHandler {
 
     pub fn search_tracks(&self, query: String) -> Option<Page<FullTrack>> {
         if let Ok(results) = self.api_client.search(&query, SearchType::Track, 10, 0, None, None) {
-            match results {
-                SearchResult::Tracks(data) => {
-                    Some(data)
-                }
-                _ => {
-                    None
-                }
+            if let SearchResult::Tracks(data) = results {
+                Some(data)
+            }
+            else {
+                None
             }
         }
         else {
@@ -125,13 +116,11 @@ impl SpotifyAPIHandler {
 
     pub fn search_artists(&self, query: String) -> Option<Page<FullArtist>> {
         if let Ok(results) = self.api_client.search(&query, SearchType::Artist, 10, 0, None, None) {
-            match results {
-                SearchResult::Artists(data) => {
-                    Some(data)
-                }
-                _ => {
-                    None
-                }
+            if let SearchResult::Artists(data) = results {
+                Some(data)
+            }
+            else {
+                None
             }
         }
         else {

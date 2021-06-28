@@ -25,13 +25,8 @@ impl APICacheHandler {
         }
     }
 
-    pub fn try_get_album(&self, id: &String) -> Option<AlbumCacheUnit> {
-        if let Some(album) = self.album_cache.get(id).clone() {
-            Some(album.clone())
-        }
-        else {
-            None
-        }
+    pub fn try_get_album(&self, id: &str) -> Option<AlbumCacheUnit> {
+        self.album_cache.get(id).cloned()
     }
 
     pub fn add_album_unit(&mut self, album: FullAlbum) -> AlbumCacheUnit {
@@ -44,17 +39,12 @@ impl APICacheHandler {
         unit
     }
 
-    pub fn try_get_track(&self, id: &String) -> Option<TrackCacheUnit> {
-        if let Some(track) = self.track_cache.get(id).clone() {
-            Some(track.clone())
-        }
-        else {
-            None
-        }
+    pub fn try_get_track(&self, id: &str) -> Option<TrackCacheUnit> {
+        self.track_cache.get(id).cloned()
     }
 
     pub fn add_track_unit(&mut self, track: FullTrack) -> Option<TrackCacheUnit> {
-        let id = track.id.clone().unwrap_or_else(|| String::new());
+        let id = track.id.clone().unwrap_or_else(String::new);
         let unit = TrackCacheUnit::from_api_data(track);
 
         if let Some(unit) = unit.as_ref() {
@@ -69,7 +59,12 @@ impl APICacheHandler {
         let mut cache_path = dirs::cache_dir().expect("Couldn't get cache dir");
         cache_path.push("imguify/data/cache.ron");
 
-        std::fs::create_dir_all(&cache_path).expect("Failed to create cache dir");
+        if let Err(error) = std::fs::create_dir_all(&cache_path) {
+            match error.kind() {
+                std::io::ErrorKind::AlreadyExists => {},
+                _ => panic!("{}", error.to_string())
+            }
+        }
         serde_any::to_file_pretty(cache_path, self).expect("Failed to write cache data");
     }
 }
@@ -89,7 +84,7 @@ impl AlbumCacheUnit {
             id: album.id,
             name: album.name,
             
-            tracks: album.tracks.items.into_iter().map(|t| t.id.unwrap_or_else(|| String::new())).collect(),
+            tracks: album.tracks.items.into_iter().map(|t| t.id.unwrap_or_else(String::new)).collect(),
             artists: album.artists.into_iter().map(|a| a.name).collect()
         }
     }

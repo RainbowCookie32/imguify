@@ -19,7 +19,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
         ui.columns(3, im_str!("results_columns_artists"), true);
         
         for artist in app_state.search_results_artists.iter() {
-            ui.text(format!("{}", artist.name));
+            ui.text(artist.name.to_string());
             ui.next_column();
 
             ui.text(format!("{} followers", artist.followers.get("total").unwrap().as_ref().unwrap()));
@@ -45,13 +45,13 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
         ui.columns(4, im_str!("results_columns_tracks"), true);
 
         for track in app_state.search_results_tracks.iter() {
-            ui.text(format!("{}", track.name));
+            ui.text(track.name.to_string());
             ui.next_column();
 
-            ui.text(format!("{}", track.artists[0].name));
+            ui.text(track.artists[0].name.to_string());
             ui.next_column();
 
-            ui.text(format!("{}", track.album.name));
+            ui.text(track.album.name.to_string());
             ui.next_column();
 
             if let Some(id) = track.id.as_ref() {

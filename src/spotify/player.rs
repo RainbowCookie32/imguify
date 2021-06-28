@@ -195,16 +195,11 @@ impl PlayerHandler {
     }
 
     pub fn get_current_song(&self) -> Option<PlaylistEntry> {
-        if let Some(entry) = self.player_queue.tracks_shuffled.get(self.player_queue.position) {
-            Some(entry.clone())
-        }
-        else {
-            None
-        }
+        self.player_queue.tracks_shuffled.get(self.player_queue.position).cloned()
     }
 
     pub fn is_queue_loaded(&self) -> bool {
-        self.player_queue.tracks_shuffled.len() > 0
+        !self.player_queue.tracks_shuffled.is_empty()
     }
 
     pub fn play_single_track(&mut self, track: TrackCacheUnit) {

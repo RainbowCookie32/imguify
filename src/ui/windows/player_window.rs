@@ -11,8 +11,8 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
         if let Some(handler) = app_state.spotify_handler.as_ref() {
             if handler.get_playback_status() {
                 if let Some(track) = handler.get_current_song() {
-                    ui.text(format!("{}", track.title()));
-                    ui.text(format!("{}", track.artist()));
+                    ui.text(track.title().to_string());
+                    ui.text(track.artist().to_string());
                 }
                 else {
                     ui.text("No data");

@@ -8,7 +8,7 @@ use zbus::{fdo, dbus_interface};
 
 use crate::spotify::player::{PlayerCommand, PlayerHandler};
 
-const DBUS_NAME: &'static str = "org.mpris.MediaPlayer2.imguify";
+const DBUS_NAME: &str = "org.mpris.MediaPlayer2.imguify";
 
 #[cfg(target_os = "linux")]
 pub struct MPRISHandler {
