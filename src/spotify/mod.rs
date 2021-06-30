@@ -49,8 +49,10 @@ impl SpotifyHandler {
         if let Some(api_handler) = SpotifyAPIHandler::init(api_cache_handler) {
             let api_handler = Arc::new(api_handler);
 
-            let mut session_cfg = SessionConfig::default();
-            session_cfg.device_id = String::from("imguify-cookie");
+            let session_cfg = SessionConfig {
+                device_id: String::from("imguify-cookie"),
+                ..Default::default()
+            };
 
             let credentials = Credentials::with_password(username, password);
 
@@ -157,7 +159,7 @@ impl SpotifyHandler {
         }
     }
 
-    pub fn remove_track_from_playlist(&mut self, playlist_id: &str, track_id: &String) {
+    pub fn remove_track_from_playlist(&mut self, playlist_id: &str, track_id: &str) {
         if self.api_handler.remove_track_from_playlist(playlist_id, track_id) {
             self.fetch_user_playlists();
         }

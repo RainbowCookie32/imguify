@@ -84,9 +84,10 @@ pub struct PlayerHandler {
 
 impl PlayerHandler {
     pub fn init(session: Session, cmd_rx: Receiver<PlayerCommand>) -> Arc<Mutex<PlayerHandler>> {
-        let mut player_cfg = PlayerConfig::default();
-
-        player_cfg.bitrate = Bitrate::Bitrate320;
+        let player_cfg = PlayerConfig {
+            bitrate: Bitrate::Bitrate320,
+            ..Default::default()
+        };
 
         let backend = audio_backend::find(None).unwrap();
         let (player, _) = Player::new(player_cfg, session, None, move || {
