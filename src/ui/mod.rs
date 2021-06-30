@@ -4,6 +4,7 @@ use crate::spotify::cache::TrackCacheUnit;
 use crate::spotify::player::PlayerCommand;
 use crate::spotify::{SpotifyHandler, PlaylistData};
 
+use windows::login_window::LoginWindowState;
 use windows::player_window::PlayerWindowState;
 
 use std::sync::Arc;
@@ -24,10 +25,6 @@ use rspotify::model::track::FullTrack;
 use rspotify::model::artist::FullArtist;
 
 pub struct AppState {
-    username: ImString,
-    password: ImString,
-    login_failed: bool,
-
     search_query: ImString,
     search_results_tracks: Vec<FullTrack>,
     search_results_artists: Vec<FullArtist>,
@@ -37,6 +34,7 @@ pub struct AppState {
     show_search_window: bool,
     show_playlist_window: bool,
 
+    login_state: LoginWindowState,
     player_state: PlayerWindowState,
 
     playlist_data: Option<Arc<PlaylistData>>,
@@ -47,10 +45,6 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> AppState {
         AppState {
-            username: ImString::new(""),
-            password: ImString::new(""),
-            login_failed: false,
-
             search_query: ImString::new(""),
             search_results_tracks: Vec::new(),
             search_results_artists: Vec::new(),
@@ -60,6 +54,7 @@ impl AppState {
             show_search_window: false,
             show_playlist_window: false,
 
+            login_state: LoginWindowState::init(),
             player_state: PlayerWindowState::init(),
 
             playlist_data: None,
