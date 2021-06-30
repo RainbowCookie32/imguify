@@ -195,6 +195,10 @@ impl PlayerHandler {
         }
     }
 
+    pub fn get_next_song(&self) -> Option<PlaylistEntry> {
+        self.player_queue.tracks_shuffled.get(self.player_queue.position + 1).cloned()
+    }
+
     pub fn get_current_song(&self) -> Option<PlaylistEntry> {
         self.player_queue.tracks_shuffled.get(self.player_queue.position).cloned()
     }

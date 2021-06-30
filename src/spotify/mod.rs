@@ -94,6 +94,15 @@ impl SpotifyHandler {
         results
     }
 
+    pub fn get_next_song(&self) -> Option<PlaylistEntry> {
+        if let Ok(lock) = self.player_handler.try_lock() {
+            lock.get_next_song()
+        }
+        else {
+            None
+        }
+    }
+
     pub fn get_current_song(&self) -> Option<PlaylistEntry> {
         if let Ok(lock) = self.player_handler.try_lock() {
             lock.get_current_song()
@@ -103,9 +112,18 @@ impl SpotifyHandler {
         }
     }
 
-    pub fn get_playback_status(&self) -> bool {
+    pub fn is_loaded(&self) -> bool {
         if let Ok(lock) = self.player_handler.try_lock() {
             lock.is_queue_loaded()
+        }
+        else {
+            true
+        }
+    }
+
+    pub fn is_playing(&self) -> bool {
+        if let Ok(lock) = self.player_handler.try_lock() {
+            lock.track_playing
         }
         else {
             true

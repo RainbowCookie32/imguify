@@ -23,7 +23,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             let label = ImString::from(format!("Play##{}", entry.id()));
             if ui.button(&label, [0.0, 0.0]) {
                 if let Some(handler) = app_state.spotify_handler.as_mut() {
-                    app_state.show_player_window = true;
+                    app_state.player_state.show = true;
                     handler.play_single_track(entry.clone());
                 }
             }

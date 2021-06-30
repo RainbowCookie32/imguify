@@ -4,6 +4,8 @@ use crate::spotify::cache::TrackCacheUnit;
 use crate::spotify::player::PlayerCommand;
 use crate::spotify::{SpotifyHandler, PlaylistData};
 
+use windows::player_window::PlayerWindowState;
+
 use std::sync::Arc;
 use std::sync::mpsc::Sender;
 
@@ -33,8 +35,9 @@ pub struct AppState {
 
     show_artist_window: bool,
     show_search_window: bool,
-    show_player_window: bool,
     show_playlist_window: bool,
+
+    player_state: PlayerWindowState,
 
     playlist_data: Option<Arc<PlaylistData>>,
     spotify_handler: Option<SpotifyHandler>,
@@ -55,8 +58,9 @@ impl AppState {
 
             show_artist_window: false,
             show_search_window: false,
-            show_player_window: false,
             show_playlist_window: false,
+
+            player_state: PlayerWindowState::init(),
 
             playlist_data: None,
             spotify_handler: None,
@@ -189,7 +193,7 @@ impl App {
                         windows::search_window::build(&ui, &mut app_state);
                     }
 
-                    if app_state.show_player_window {
+                    if app_state.player_state.show {
                         windows::player_window::build(&ui, &mut app_state);
                     }
 

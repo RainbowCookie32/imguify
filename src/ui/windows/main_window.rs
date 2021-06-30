@@ -43,7 +43,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
                                 plist.fetch_data(api_handler);
                             });
 
-                            app_state.show_player_window = true;
+                            app_state.player_state.show = true;
                         }
                     }
                 
