@@ -23,6 +23,8 @@ imgui = "0.7.0"
 imgui-winit-support = "0.7.1"
 imgui-glium-renderer = "0.7.0"
 
+librespot = { git = "https://github.com/RainbowCookie32/librespot" }
+
 [dependencies.tokio]
 version = "1.6.1"
 default-features = false
@@ -31,9 +33,6 @@ features = ["sync"]
 [dependencies.rspotify]
 version = "0.10.0"
 features = ["blocking"]
-
-[dependencies.librespot]
-version = "0.2.0"
 
 [dependencies.serde_any]
 version = "0.5.0"

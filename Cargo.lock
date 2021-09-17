@@ -1767,6 +1767,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "libm"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7d73b3f436185384286bd8098d17ec07c9a7d2388a6599f824d8502b529702a"
+
+[[package]]
 name = "libmdns"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1787,8 +1793,7 @@ dependencies = [
 [[package]]
 name = "librespot"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "450aa724dcc28a06c6f3a070e7f4b84c0800d9152bec3b012a11ff886986bd58"
+source = "git+https://github.com/RainbowCookie32/librespot#6957c4e909b0730ca217b340a0b4679fa55a273f"
 dependencies = [
  "base64 0.13.0",
  "env_logger 0.8.4",
@@ -1799,6 +1804,7 @@ dependencies = [
  "librespot-audio",
  "librespot-connect",
  "librespot-core",
+ "librespot-discovery",
  "librespot-metadata",
  "librespot-playback",
  "librespot-protocol",
@@ -1813,38 +1819,27 @@ dependencies = [
 [[package]]
 name = "librespot-audio"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa0e89d3e106d80600537eba02c17ea6dd8b3de3f46c99952b813b6f6d6445c0"
+source = "git+https://github.com/RainbowCookie32/librespot#6957c4e909b0730ca217b340a0b4679fa55a273f"
 dependencies = [
  "aes-ctr",
  "byteorder",
  "bytes 1.0.1",
- "cfg-if 1.0.0",
  "futures-util",
- "lewton",
  "librespot-core",
  "log",
- "ogg",
  "tempfile",
  "tokio 1.7.1",
- "zerocopy",
 ]
 
 [[package]]
 name = "librespot-connect"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69425fd6c8d74779f1ec86b16e6b3114df50c8a0d94db5a5601ef634bfb5e288"
+source = "git+https://github.com/RainbowCookie32/librespot#6957c4e909b0730ca217b340a0b4679fa55a273f"
 dependencies = [
- "aes-ctr",
- "base64 0.13.0",
  "form_urlencoded",
- "futures-core",
  "futures-util",
- "hmac 0.11.0",
- "hyper 0.14.9",
- "libmdns",
  "librespot-core",
+ "librespot-discovery",
  "librespot-playback",
  "librespot-protocol",
  "log",
@@ -1852,17 +1847,14 @@ dependencies = [
  "rand 0.8.4",
  "serde",
  "serde_json",
- "sha-1",
  "tokio 1.7.1",
  "tokio-stream",
- "url 2.2.2",
 ]
 
 [[package]]
 name = "librespot-core"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df3e70dce131f5531c982ca133f04fd1d1dd4208de27291dcd9ab6841c963248"
+source = "git+https://github.com/RainbowCookie32/librespot#6957c4e909b0730ca217b340a0b4679fa55a273f"
 dependencies = [
  "aes",
  "base64 0.13.0",
@@ -1900,10 +1892,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "librespot-discovery"
+version = "0.2.0"
+source = "git+https://github.com/RainbowCookie32/librespot#6957c4e909b0730ca217b340a0b4679fa55a273f"
+dependencies = [
+ "aes-ctr",
+ "base64 0.13.0",
+ "cfg-if 1.0.0",
+ "form_urlencoded",
+ "futures-core",
+ "hmac 0.11.0",
+ "hyper 0.14.9",
+ "libmdns",
+ "librespot-core",
+ "log",
+ "rand 0.8.4",
+ "serde_json",
+ "sha-1",
+ "thiserror",
+ "tokio 1.7.1",
+]
+
+[[package]]
 name = "librespot-metadata"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84157ce5d901dbdcaef17ed305deba5d87171725347673a1b632a334d910af47"
+source = "git+https://github.com/RainbowCookie32/librespot#6957c4e909b0730ca217b340a0b4679fa55a273f"
 dependencies = [
  "async-trait",
  "byteorder",
@@ -1916,17 +1929,20 @@ dependencies = [
 [[package]]
 name = "librespot-playback"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59ca3df986a7e1a43008717660803e159177e86a589d484a0fc01fccd7967ad6"
+source = "git+https://github.com/RainbowCookie32/librespot#6957c4e909b0730ca217b340a0b4679fa55a273f"
 dependencies = [
  "byteorder",
  "cpal",
  "futures-executor",
  "futures-util",
+ "lewton",
  "librespot-audio",
  "librespot-core",
  "librespot-metadata",
  "log",
+ "ogg",
+ "rand 0.8.4",
+ "rand_distr",
  "rodio",
  "shell-words",
  "thiserror",
@@ -1937,12 +1953,10 @@ dependencies = [
 [[package]]
 name = "librespot-protocol"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c753be4c3bd0f02b30c00d5d8547f16d557654cb737e70505aec6aa9990435d"
+source = "git+https://github.com/RainbowCookie32/librespot#6957c4e909b0730ca217b340a0b4679fa55a273f"
 dependencies = [
  "glob",
  "protobuf",
- "protobuf-codegen",
  "protobuf-codegen-pure",
 ]
 
@@ -2397,6 +2411,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a64b1ec5cda2586e284722486d802acf1f7dbdc623e2bfc57e65ca1cd099290"
 dependencies = [
  "autocfg 1.0.1",
+ "libm",
 ]
 
 [[package]]
@@ -2904,6 +2919,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rand_distr"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "051b398806e42b9cd04ad9ec8f81e355d0a382c543ac6672c62f5a5b452ef142"
+dependencies = [
+ "num-traits",
+ "rand 0.8.4",
+]
+
+[[package]]
 name = "rand_hc"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3091,9 +3116,9 @@ dependencies = [
 
 [[package]]
 name = "rodio"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b65c2eda643191f6d1bb12ea323a9db8d9ba95374e9be3780b5a9fb5cfb8520f"
+checksum = "4d98f5e557b61525057e2bc142c8cd7f0e70d75dc32852309bec440e6e046bf9"
 dependencies = [
  "cpal",
 ]
