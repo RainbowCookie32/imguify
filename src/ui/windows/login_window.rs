@@ -4,8 +4,8 @@ use crate::spotify::SpotifyHandler;
 use imgui::*;
 
 pub struct LoginWindowState {
-    pub username: ImString,
-    password: ImString,
+    pub username: String,
+    password: String,
     
     login_failed: bool,
     save_username: bool,
@@ -33,8 +33,8 @@ impl LoginWindowState {
         };
 
         LoginWindowState {
-            username: ImString::new(""),
-            password: ImString::new(""),
+            username: String::new(),
+            password: String::new(),
 
             login_failed: false,
             save_username: false,
@@ -47,54 +47,52 @@ impl LoginWindowState {
 
 pub fn build(ui: &Ui, app_state: &mut AppState) {
     if app_state.login_state.login_failed {
-        ui.open_popup(im_str!("Couldn't log in"));
+        ui.open_popup("Couldn't log in");
     }
 
-    ui.popup_modal(im_str!("Couldn't log in")).build(|| {
+    PopupModal::new("Couldn't log in").build(ui, || {
         ui.text("Error logging in, please try again.");
 
-        if ui.button(im_str!("Ok"), [0.0, 0.0]) {
+        if ui.button("Ok") {
             ui.close_current_popup();
             app_state.login_state.login_failed = false;
         }
     });
 
-    Window::new(im_str!("Login to Spotify")).size([600.0, 130.0], Condition::Always).build(&ui, || {
-        ui.columns(2, im_str!("login_cols"), true);
+    Window::new("Login to Spotify").size([600.0, 130.0], Condition::Always).build(ui, || {
+        ui.columns(2, "login_cols", true);
 
-        ui.bullet_text(im_str!("Login"));
+        ui.bullet_text("Login");
 
         let mut submitted = {
-            ui.input_text(im_str!("Username"), &mut app_state.login_state.username)
-                .resize_buffer(true)
+            ui.input_text("Username", &mut app_state.login_state.username)
                 .enter_returns_true(true)
                 .build()
             ||
-            ui.input_text(im_str!("Password"), &mut app_state.login_state.password)
+            ui.input_text("Password", &mut app_state.login_state.password)
                 .password(true)
-                .resize_buffer(true)
                 .enter_returns_true(true)
                 .build()
             ||
-            ui.button(im_str!("Login"), [45.0, 20.0])
+            ui.button("Login")
         };
 
-        ui.same_line(0.0);
-        ui.checkbox(im_str!("Remember me"), &mut app_state.login_state.save_username);
+        ui.same_line();
+        ui.checkbox("Remember me", &mut app_state.login_state.save_username);
 
         ui.next_column();
 
-        ui.bullet_text(im_str!("Saved usernames"));
+        ui.bullet_text("Saved usernames");
 
-        ListBox::new(im_str!("")).size([250.0, 50.0]).build(&ui, || {
+        ListBox::new("").size([250.0, 50.0]).build(ui, || {
             for username in app_state.login_state.saved_usernames.iter() {
-                if Selectable::new(&ImString::from(username.to_string())).build(&ui) {
+                if Selectable::new(&ImString::from(username.to_string())).build(ui) {
                     let keyring = keyring::Keyring::new("imguify", username);
 
                     if let Ok(password) = keyring.get_password() {
                         app_state.login_state.keyring_login = true;
-                        app_state.login_state.username = ImString::from(username.to_string());
-                        app_state.login_state.password = ImString::from(password);
+                        app_state.login_state.username = username.clone();
+                        app_state.login_state.password = password;
 
                         submitted = true;
                     }

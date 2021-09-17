@@ -10,13 +10,13 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
         }
     }
     
-    Window::new(im_str!("Main Window")).size([800.0, 500.0], Condition::FirstUseEver).build(&ui, || {
+    Window::new("Main Window").size([800.0, 500.0], Condition::FirstUseEver).build(ui, || {
         let mut show_tree_separator = true;
 
         ui.text_colored([0.0, 1.0, 0.0, 1.0], format!("Connected to Spotify as {}", app_state.login_state.username));
         ui.separator();
 
-        TreeNode::new(im_str!("User Playlists")).build(&ui, || {
+        TreeNode::new("User Playlists").build(ui, || {
             if let Some(handler) = app_state.spotify_handler.as_mut() {
                 let plists = handler.get_playlists_names();
 
@@ -26,10 +26,9 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
 
                 for (idx, plist) in plists.iter().enumerate() {
                     ui.text(plist);
-                    ui.same_line(200.0);
+                    ui.same_line_with_pos(200.0);
     
-                    let label = ImString::from(format!("Play##{}", plist));
-                    if ui.button(&label, [40.0, 20.0]) {
+                    if ui.button(format!("Play##{}", plist)) {
                         if let Some(tx) = app_state.player_tx.as_ref() {
                             // A bit of a gamble, but should be fine.
                             let plist = handler.get_playlist(idx).unwrap();
@@ -47,10 +46,9 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
                         }
                     }
                 
-                    ui.same_line(250.0);
+                    ui.same_line_with_pos(250.0);
     
-                    let label = ImString::from(format!("View##{}", plist));
-                    if ui.button(&label, [40.0, 20.0]) {
+                    if ui.button(format!("View##{}", plist)) {
                         let playlist = handler.get_playlist(idx);
                         let playlist_fetch = playlist.clone();
     
@@ -76,7 +74,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             ui.separator();
         }
 
-        if ui.button(im_str!("Search in Spotify"), [0.0, 0.0]) {
+        if ui.button("Search in Spotify") {
             app_state.show_search_window = true;
         }
     });

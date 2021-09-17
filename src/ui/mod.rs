@@ -25,7 +25,7 @@ use rspotify::model::track::FullTrack;
 use rspotify::model::artist::FullArtist;
 
 pub struct AppState {
-    search_query: ImString,
+    search_query: String,
     search_results_tracks: Vec<FullTrack>,
     search_results_artists: Vec<FullArtist>,
     search_artist_page_tracks: Vec<TrackCacheUnit>,
@@ -45,7 +45,7 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> AppState {
         AppState {
-            search_query: ImString::new(""),
+            search_query: String::new(),
             search_results_tracks: Vec::new(),
             search_results_artists: Vec::new(),
             search_artist_page_tracks: Vec::new(),
@@ -166,7 +166,7 @@ impl App {
             Event::MainEventsCleared => {
                 let gl_window = display.gl_window();
 
-                platform.prepare_frame(imgui.io_mut(), &gl_window.window()).unwrap();
+                platform.prepare_frame(imgui.io_mut(), gl_window.window()).unwrap();
                 gl_window.window().request_redraw();
             }
             Event::RedrawRequested(_) => {
@@ -197,7 +197,7 @@ impl App {
                     }
                 }
 
-                token.pop(&ui);
+                token.pop();
 
                 let gl_window = display.gl_window();
                 let mut target = display.draw();

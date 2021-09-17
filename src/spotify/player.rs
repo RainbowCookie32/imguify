@@ -114,10 +114,8 @@ impl PlayerHandler {
 
             loop {
                 if let Ok(mut lock) = player.lock() {
-                    if let Some(event) = lock.player_events.recv().now_or_never() {
-                        if let Some(event) = event {
-                            lock.handle_player_event(event);
-                        }
+                    if let Some(Some(event)) = lock.player_events.recv().now_or_never() {
+                        lock.handle_player_event(event);
                     }
 
                     if let Ok(command) = lock.cmd_rx.try_recv() {

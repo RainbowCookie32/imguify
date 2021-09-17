@@ -3,8 +3,8 @@ use crate::ui::AppState;
 use imgui::*;
 
 pub fn build(ui: &Ui, app_state: &mut AppState) {
-    Window::new(im_str!("Artist Info")).size([420.0, 300.0], Condition::FirstUseEver).build(&ui, || {
-        ui.columns(4, im_str!("artist_tracks_columns"), true);
+    Window::new("Artist Info").size([420.0, 300.0], Condition::FirstUseEver).build(ui, || {
+        ui.columns(4, "artist_tracks_columns", true);
 
         for entry in app_state.search_artist_page_tracks.iter() {
             ui.text(entry.name());
@@ -20,8 +20,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             ui.text(format!("{}:{:02}", minutes, seconds));
             ui.next_column();
 
-            let label = ImString::from(format!("Play##{}", entry.id()));
-            if ui.button(&label, [0.0, 0.0]) {
+            if ui.button(format!("Play##{}", entry.id())) {
                 if let Some(handler) = app_state.spotify_handler.as_mut() {
                     app_state.player_state.show = true;
                     handler.play_single_track(entry.clone());

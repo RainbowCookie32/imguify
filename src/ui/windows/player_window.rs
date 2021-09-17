@@ -42,22 +42,22 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
         }
     }
 
-    Window::new(im_str!("Player")).size([420.0, 300.0], Condition::FirstUseEver).build(&ui, || {
-        ui.text_colored([0.2, 1.0, 0.0, 1.0], im_str!("Currently Playing:"));
+    Window::new("Player").size([420.0, 300.0], Condition::FirstUseEver).build(ui, || {
+        ui.text_colored([0.2, 1.0, 0.0, 1.0], "Currently Playing:");
 
         ui.text(app_state.player_state.current_track.to_string());
         ui.text(app_state.player_state.current_artist.to_string());
 
         ui.separator();
 
-        ui.text_colored([1.0, 0.5, 0.0, 1.0], im_str!("Next Track:"));
+        ui.text_colored([1.0, 0.5, 0.0, 1.0], "Next Track:");
 
         ui.text(app_state.player_state.next_track.to_string());
         ui.text(app_state.player_state.next_artist.to_string());
 
         ui.separator();
 
-        if ui.button(im_str!("«"), [0.0, 0.0]) {
+        if ui.button("«") {
             if let Some(tx) = app_state.player_tx.as_ref() {
                 if let Err(error) = tx.send(PlayerCommand::PrevTrack) {
                     println!("{}", error.to_string());
@@ -65,23 +65,23 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             }
         }
 
-        ui.same_line(0.0);
+        ui.same_line();
 
         let label = {
             if let Some(handler) = app_state.spotify_handler.as_ref() {
                 if handler.is_playing() {
-                    im_str!("Pause")
+                    "Pause"
                 }
                 else {
-                    im_str!("Play")
+                    "Play"
                 }
             }
             else {
-                im_str!("Play")
+                "Play"
             }
         };
 
-        if ui.button(label, [0.0, 0.0]) {
+        if ui.button(label) {
             if let Some(tx) = app_state.player_tx.as_ref() {
                 if let Err(error) = tx.send(PlayerCommand::PlayPause) {
                     println!("{}", error.to_string());
@@ -89,9 +89,9 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             }
         }
 
-        ui.same_line(0.0);
+        ui.same_line();
 
-        if ui.button(im_str!("»"), [0.0, 0.0]) {
+        if ui.button("»") {
             if let Some(tx) = app_state.player_tx.as_ref() {
                 if let Err(error) = tx.send(PlayerCommand::SkipTrack) {
                     println!("{}", error.to_string());
