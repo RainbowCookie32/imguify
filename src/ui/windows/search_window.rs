@@ -56,7 +56,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             if let Some(id) = track.id.as_ref() {
                 if ui.button(format!("Play##{}", id)) {
                     if let Some(handler) = app_state.spotify_handler.as_mut() {
-                        if let Some(track) = handler.get_api_handler().get_track(id.clone()) {
+                        if let Ok(track) = handler.get_api_handler().get_track(id.clone()) {
                             handler.play_single_track(track);
                             app_state.player_state.show = true;
                         }

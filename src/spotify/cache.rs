@@ -65,6 +65,7 @@ impl APICacheHandler {
                 _ => panic!("{}", error.to_string())
             }
         }
+        
         serde_any::to_file_pretty(cache_path, self).expect("Failed to write cache data");
     }
 }

@@ -12,6 +12,7 @@ use player::{PlayerCommand, PlayerHandler};
 use std::sync::{Arc, Mutex, RwLock};
 use std::sync::mpsc::{Sender, Receiver};
 
+use anyhow::{Context, Result};
 use tokio::runtime::Runtime;
 
 use librespot::core::cache::Cache;
@@ -37,47 +38,42 @@ pub struct SpotifyHandler {
 }
 
 impl SpotifyHandler {
-    pub fn init(username: String, password: String, cmd_tx: Sender<PlayerCommand>, cmd_rx: Receiver<PlayerCommand>) -> Option<SpotifyHandler> {
+    pub fn init(username: String, password: String, cmd_tx: Sender<PlayerCommand>, cmd_rx: Receiver<PlayerCommand>) -> Result<SpotifyHandler> {
         let rt = Runtime::new().unwrap();
+        let cache_path = {
+            let mut path = dirs::cache_dir().context("Failed to get system cache path")?;
+            path.push("imguify/audio");
 
-        let mut player_cache_path = dirs::cache_dir().expect("Couldn't get cache dir");
-        player_cache_path.push("imguify/audio");
+            path
+        };
 
-        let player_cache = Cache::new(None, Some(player_cache_path), None).unwrap();
+        let player_cache = Cache::new(None, Some(cache_path), None)?;
         let api_cache_handler = Arc::new(Mutex::new(APICacheHandler::init()));
+        let api_handler = Arc::new(SpotifyAPIHandler::init(api_cache_handler)?);
 
-        if let Some(api_handler) = SpotifyAPIHandler::init(api_cache_handler) {
-            let api_handler = Arc::new(api_handler);
+        let session_cfg = SessionConfig {
+            device_id: String::from("imguify-cookie"),
+            ..Default::default()
+        };
 
-            let session_cfg = SessionConfig {
-                device_id: String::from("imguify-cookie"),
-                ..Default::default()
-            };
+        let credentials = Credentials::with_password(username, password);
+        let spotify_session = rt.block_on(Session::connect(session_cfg, credentials, Some(player_cache)))?;
+        let player_handler = PlayerHandler::init(spotify_session.clone(), cmd_rx);
 
-            let credentials = Credentials::with_password(username, password);
-
-            if let Ok(session) = rt.block_on(Session::connect(session_cfg, credentials, Some(player_cache))) {
-                let spotify_session = session;
-                let player_handler = PlayerHandler::init(spotify_session.clone(), cmd_rx);
-
-                if cfg!(target_os = "linux") {
-                    dbus::init_connection(cmd_tx, player_handler.clone());
-                }
-                
-                return Some(
-                    SpotifyHandler {
-                        rt,
-                        spotify_session,
-                        
-                        api_handler,
-                        playlist_data: Vec::new(),
-                        player_handler
-                    }
-                )
-            }
+        if cfg!(target_os = "linux") {
+            dbus::init_connection(cmd_tx, player_handler.clone());
         }
 
-        None
+        let spotify_handler = SpotifyHandler {
+            rt,
+            spotify_session,
+            
+            api_handler,
+            playlist_data: Vec::new(),
+            player_handler
+        };
+        
+        Ok(spotify_handler)
     }
 
     pub fn get_playlist(&mut self, plist: usize) -> Option<Arc<PlaylistData>> {
@@ -207,7 +203,7 @@ impl SpotifyHandler {
                 if let Some(id) = album.id {
                     if let Some(data) = self.api_handler.get_album(id) {
                         for track in data.tracks() {
-                            if let Some(track) = self.api_handler.get_track(track.clone()) {
+                            if let Ok(track) = self.api_handler.get_track(track.clone()) {
                                 results.push(track);
                             }
                         }
@@ -244,7 +240,7 @@ impl PlaylistData {
         }
 
         for id in self.entries.iter() {            
-            if let Some(track_data) = api_handler.get_track(id.to_base62()) {
+            if let Ok(track_data) = api_handler.get_track(id.to_base62()) {
                 if let Ok(mut lock) = self.entries_data.write() {
                     let artist_data = track_data.artists()[0].clone();
 

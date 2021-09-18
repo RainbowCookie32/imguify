@@ -11,6 +11,7 @@ dirs = "3.0.2"
 rand = "0.8.3"
 glium = "0.30.2"
 serde = "1.0.126"
+anyhow = "1.0.44"
 dotenv = "0.15.0"
 futures = "0.3.15"
 

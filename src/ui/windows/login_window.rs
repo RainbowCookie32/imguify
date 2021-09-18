@@ -111,7 +111,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
 
             let (cmd_tx, cmd_rx) = std::sync::mpsc::channel();
 
-            if let Some(handler) = SpotifyHandler::init(username.clone(), password.clone(), cmd_tx.clone(), cmd_rx) {
+            if let Ok(handler) = SpotifyHandler::init(username.clone(), password.clone(), cmd_tx.clone(), cmd_rx) {
                 app_state.player_tx = Some(cmd_tx);
                 app_state.spotify_handler = Some(handler);
 

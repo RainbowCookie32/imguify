@@ -1,4 +1,7 @@
+use std::env;
 use std::sync::{Arc, Mutex};
+
+use anyhow::{Context, Result};
 
 use rspotify::model::page::Page;
 use rspotify::model::track::FullTrack;
@@ -19,29 +22,28 @@ pub struct SpotifyAPIHandler {
 }
 
 impl SpotifyAPIHandler {
-    pub fn init(cache_handler: Arc<Mutex<APICacheHandler>>) -> Option<SpotifyAPIHandler> {
+    pub fn init(cache_handler: Arc<Mutex<APICacheHandler>>) -> Result<SpotifyAPIHandler> {
+        let client_id = env::var("CLIENT_ID")?;
+        let client_secret = env::var("CLIENT_SECRET")?;
+
         let mut oauth = SpotifyOAuth::default()
             .scope("playlist-read-private")
             .redirect_uri("http://localhost:8888/callback")
-            .client_id(&std::env::var("CLIENT_ID").expect("Failed to load CLIENT_ID value."))
-            .client_secret(&std::env::var("CLIENT_SECRET").expect("Failed to load CLIENT_SECRET value."))
+            .client_id(&client_id)
+            .client_secret(&client_secret)
             .build()
         ;
 
-        if let Some(token) = rspotify::blocking::util::get_token(&mut oauth) {
-            let api_credentials = SpotifyClientCredentials::default().token_info(token);
-            let api_client = Spotify::default().client_credentials_manager(api_credentials).build();
+        let token = rspotify::blocking::util::get_token(&mut oauth).context("Failed to get API token")?;
+        let api_credentials = SpotifyClientCredentials::default().token_info(token);
+        let api_client = Spotify::default().client_credentials_manager(api_credentials).build();
 
-            let res = SpotifyAPIHandler {
-                api_client,
-                cache_handler
-            };
+        let handler = SpotifyAPIHandler {
+            api_client,
+            cache_handler
+        };
 
-            Some(res)
-        }
-        else {
-            None
-        }
+        Ok(handler)
     }
 
     pub fn get_user_playlists(&self) -> Option<Page<SimplifiedPlaylist>> {
@@ -53,22 +55,18 @@ impl SpotifyAPIHandler {
         self.api_client.user_playlist_remove_all_occurrences_of_tracks(&user_id, playlist_id, &[track_id.to_string()], None).is_ok()
     }
 
-    pub fn get_track(&self, track_id: String) -> Option<TrackCacheUnit> {
+    pub fn get_track(&self, track_id: String) -> Result<TrackCacheUnit> {
         if let Ok(mut lock) = self.cache_handler.lock() {
-            let cache_result = lock.try_get_track(&track_id);
-
-            if cache_result.is_some() {
-                cache_result
-            }
-            else if let Some(track_data) = self.api_lookup_track(track_id) {
-                lock.add_track_unit(track_data)
+            if let Some(unit) = lock.try_get_track(&track_id) {
+                Ok(unit)
             }
             else {
-                None
+                let track_data = self.api_lookup_track(track_id).context("Couldn't find track on API")?;
+                lock.add_track_unit(track_data).context("Failed to add track to cache")
             }
         }
         else {
-            None
+            Err(anyhow::Error::msg("Couldn't lock API cache handler"))
         }
     }
 
