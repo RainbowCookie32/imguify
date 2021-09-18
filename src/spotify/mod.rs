@@ -265,11 +265,6 @@ impl PlaylistData {
         &self.entries_data
     }
 
-    /// Get a reference to the playlist data's entries.
-    pub fn entries(&self) -> &Vec<SpotifyId> {
-        &self.entries
-    }
-
     /// Get a reference to the playlist data's id.
     pub fn id(&self) -> &SpotifyId {
         &self.id

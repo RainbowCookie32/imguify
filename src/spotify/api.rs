@@ -99,13 +99,8 @@ impl SpotifyAPIHandler {
     }
 
     pub fn search_tracks(&self, query: String) -> Option<Page<FullTrack>> {
-        if let Ok(results) = self.api_client.search(&query, SearchType::Track, 10, 0, None, None) {
-            if let SearchResult::Tracks(data) = results {
-                Some(data)
-            }
-            else {
-                None
-            }
+        if let Ok(SearchResult::Tracks(data)) = self.api_client.search(&query, SearchType::Track, 10, 0, None, None) {
+            Some(data)
         }
         else {
             None
@@ -113,13 +108,8 @@ impl SpotifyAPIHandler {
     }
 
     pub fn search_artists(&self, query: String) -> Option<Page<FullArtist>> {
-        if let Ok(results) = self.api_client.search(&query, SearchType::Artist, 10, 0, None, None) {
-            if let SearchResult::Artists(data) = results {
-                Some(data)
-            }
-            else {
-                None
-            }
+        if let Ok(SearchResult::Artists(data)) = self.api_client.search(&query, SearchType::Artist, 10, 0, None, None) {
+            Some(data)
         }
         else {
             None
