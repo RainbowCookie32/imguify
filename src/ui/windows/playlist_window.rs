@@ -4,6 +4,9 @@ use imgui::*;
 
 pub fn build(ui: &Ui, app_state: &mut AppState) {
     Window::new("Playlist").size([800.0, 500.0], Condition::FirstUseEver).build(ui, || {
+        let mut play_song = None;
+        let mut remove_song = None;
+
         if let Some(plist) = app_state.playlist_data.as_ref() {
             if let Ok(mut entries) = plist.entries_data().try_write() {
                 let token = ui.begin_table_header_with_flags(
@@ -57,19 +60,27 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
 
                         ui.table_next_column();
                         if ui.button(format!("Play##{}", entry.id())) {
-                            if let Some(handler) = app_state.spotify_handler.as_mut() {
-                                app_state.player_state.show = true;
-                                handler.play_song_on_playlist(plist.id().to_base62(), entry.id());
-                            }
+                            play_song = Some(entry.id().clone());
                         }
     
                         ui.same_line();
                         if ui.button(format!("Remove##{}", entry.id())) {
-                            if let Some(handler) = app_state.spotify_handler.as_mut() {
-                                handler.remove_track_from_playlist(&plist.id().to_base62(), entry.id());
-                            }
+                            remove_song = Some(entry.id().clone());
                         }
                     }
+                }
+            }
+
+            if let Some(track_to_play) = play_song {
+                if let Some(handler) = app_state.spotify_handler.as_mut() {
+                    app_state.player_state.show = true;
+                    handler.play_song_on_playlist(plist.id().to_base62(), &track_to_play);
+                }
+            }
+
+            if let Some(track_to_remove) = remove_song {
+                if let Some(handler) = app_state.spotify_handler.as_mut() {
+                    handler.remove_track_from_playlist(&plist.id().to_base62(), &track_to_remove);
                 }
             }
         }
