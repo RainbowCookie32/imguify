@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dirs = "3.0.2"
+dirs = "4.0.0"
 rand = "0.8.3"
 glium = "0.30.2"
 serde = "1.0.126"

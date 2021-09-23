@@ -17,11 +17,17 @@ impl MainWindow {
     }
 
     pub fn draw(&mut self, ui: &Ui, app_state: &mut AppState) {
+        let mut show_separator = true;
+
         Window::new("Main Window").size([800.0, 500.0], Condition::FirstUseEver).build(ui, || {
             ui.text_colored([0.0, 1.0, 0.0, 1.0], format!("Connected to Spotify as {}", self.username));
             ui.separator();
     
             TreeNode::new("User Playlists").build(ui, || {
+                if !self.playlists.is_empty() {
+                    show_separator = false;
+                }
+
                 for (idx, plist) in self.playlists.iter().enumerate() {
                     ui.text(plist);
                     ui.same_line_with_pos(200.0);
@@ -71,7 +77,7 @@ impl MainWindow {
                 }
             });
     
-            if !self.playlists.is_empty() {
+            if show_separator {
                 ui.separator();
             }
     
