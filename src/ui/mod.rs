@@ -4,8 +4,11 @@ use crate::spotify::cache::TrackCacheUnit;
 use crate::spotify::player::PlayerCommand;
 use crate::spotify::{SpotifyHandler, PlaylistData};
 
-use windows::login_window::LoginWindowState;
-use windows::player_window::PlayerWindowState;
+use windows::artist_window::ArtistWindow;
+use windows::login_window::LoginWindow;
+use windows::main_window::MainWindow;
+use windows::player_window::PlayerWindow;
+use windows::playlist_window::PlaylistWindow;
 
 use std::sync::Arc;
 use std::sync::mpsc::Sender;
@@ -31,11 +34,9 @@ pub struct AppState {
     search_artist_page_tracks: Vec<TrackCacheUnit>,
 
     show_artist_window: bool,
+    show_player_window: bool,
     show_search_window: bool,
     show_playlist_window: bool,
-
-    login_state: LoginWindowState,
-    player_state: PlayerWindowState,
 
     playlist_data: Option<Arc<PlaylistData>>,
     spotify_handler: Option<SpotifyHandler>,
@@ -51,11 +52,9 @@ impl AppState {
             search_artist_page_tracks: Vec::new(),
 
             show_artist_window: false,
+            show_player_window: false,
             show_search_window: false,
             show_playlist_window: false,
-
-            login_state: LoginWindowState::init(),
-            player_state: PlayerWindowState::init(),
 
             playlist_data: None,
             spotify_handler: None,
@@ -112,6 +111,13 @@ impl App {
         } = self;
 
         let mut app_state = AppState::new();
+
+        let mut login_window = LoginWindow::init();
+        
+        let mut artist_window: Option<ArtistWindow> = None;
+        let mut main_window: Option<MainWindow> = None;
+        let mut player_window: Option<PlayerWindow> = None;
+        let mut playlist_window: Option<PlaylistWindow> = None;
 
         let id = imgui.fonts().add_font(&[
             FontSource::DefaultFontData {
@@ -175,25 +181,56 @@ impl App {
                 let token = ui.push_font(id);
 
                 if app_state.spotify_handler.is_none() {
-                    windows::login_window::build(&ui, &mut app_state);
+                    let username = login_window.draw(&ui, &mut app_state);
+
+                    if !username.is_empty() {
+                        let playlists = {
+                            if let Some(handler) = app_state.spotify_handler.as_mut() {
+                                handler.fetch_user_playlists();
+                                handler.get_playlists_names()
+                            }
+                            else {
+                                Vec::new()
+                            }
+                        };
+
+                        main_window = Some(MainWindow::init(username, playlists));
+                    }
                 }
                 else {
-                    windows::main_window::build(&ui, &mut app_state);
+                    if let Some(window) = main_window.as_mut() {
+                        window.draw(&ui, &mut app_state);
+                    }
 
                     if app_state.show_artist_window {
-                        windows::artist_window::build(&ui, &mut app_state);
+                        if let Some(window) = artist_window.as_mut() {
+                            window.draw(&ui, &mut app_state);
+                        }
+                        else {
+                            artist_window = Some(ArtistWindow::init(app_state.search_query.clone(), app_state.search_artist_page_tracks.clone()));
+                        }
                     }
 
                     if app_state.show_search_window {
                         windows::search_window::build(&ui, &mut app_state);
                     }
 
-                    if app_state.player_state.show {
-                        windows::player_window::build(&ui, &mut app_state);
+                    if app_state.show_player_window {
+                        if let Some(window) = player_window.as_mut() {
+                            window.draw(&ui, &mut app_state);
+                        }
+                        else {
+                            player_window = Some(PlayerWindow::init());
+                        }
                     }
 
                     if app_state.show_playlist_window {
-                        windows::playlist_window::build(&ui, &mut app_state);
+                        if let Some(window) = playlist_window.as_mut() {
+                            window.draw(&ui, &mut app_state);
+                        }
+                        else if let Some(playlist) = app_state.playlist_data.as_ref() {
+                            playlist_window = Some(PlaylistWindow::init(playlist.clone()));
+                        }
                     }
                 }
 

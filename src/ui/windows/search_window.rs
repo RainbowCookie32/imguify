@@ -3,7 +3,9 @@ use crate::ui::AppState;
 use imgui::*;
 
 pub fn build(ui: &Ui, app_state: &mut AppState) {
-    Window::new("Search").size([800.0, 500.0], Condition::FirstUseEver).build(ui, || {
+    let mut show_window = app_state.show_search_window;
+
+    Window::new("Search").size([800.0, 500.0], Condition::FirstUseEver).opened(&mut show_window).build(ui, || {
         if ui.input_text("Search Query", &mut app_state.search_query).enter_returns_true(true).build() {
             if let Some(handler) = app_state.spotify_handler.as_ref() {
                 app_state.search_results_artists = handler.search_artists(app_state.search_query.to_string());
@@ -58,7 +60,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
                     if let Some(handler) = app_state.spotify_handler.as_mut() {
                         if let Ok(track) = handler.get_api_handler().get_track(id.clone()) {
                             handler.play_single_track(track);
-                            app_state.player_state.show = true;
+                            app_state.show_player_window = true;
                         }
                     }
                 }
@@ -67,4 +69,6 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             ui.next_column();
         }
     });
+
+    app_state.show_search_window = show_window;
 }

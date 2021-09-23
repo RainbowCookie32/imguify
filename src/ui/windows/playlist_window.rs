@@ -1,14 +1,29 @@
+use std::sync::Arc;
+
 use crate::ui::AppState;
+use crate::spotify::PlaylistData;
 
 use imgui::*;
 
-pub fn build(ui: &Ui, app_state: &mut AppState) {
-    Window::new("Playlist").size([800.0, 500.0], Condition::FirstUseEver).build(ui, || {
-        let mut play_song = None;
-        let mut remove_song = None;
+pub struct PlaylistWindow {
+    playlist: Arc<PlaylistData>
+}
 
-        if let Some(plist) = app_state.playlist_data.as_ref() {
-            if let Ok(mut entries) = plist.entries_data().try_write() {
+impl PlaylistWindow {
+    pub fn init(playlist: Arc<PlaylistData>) -> PlaylistWindow {
+        PlaylistWindow {
+            playlist
+        }
+    }
+
+    pub fn draw(&mut self, ui: &Ui, app_state: &mut AppState) {
+        let mut show_window = app_state.show_playlist_window;
+
+        Window::new("Playlist").size([800.0, 500.0], Condition::FirstUseEver).opened(&mut show_window).build(ui, || {
+            let mut play_song = None;
+            let mut remove_song = None;
+    
+            if let Ok(mut entries) = self.playlist.entries_data().try_write() {
                 let token = ui.begin_table_header_with_flags(
                     "Playlist Table",
                     [
@@ -17,7 +32,7 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
                         TableColumnSetup::new("Duration"),
                         TableColumnSetup::new("Actions")
                     ],
-                    TableFlags::RESIZABLE | TableFlags::SORTABLE | TableFlags::BORDERS
+                    TableFlags::BORDERS | TableFlags::RESIZABLE | TableFlags::SORTABLE
                 );
                 
                 if let Some(_t) = token {
@@ -73,16 +88,18 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
 
             if let Some(track_to_play) = play_song {
                 if let Some(handler) = app_state.spotify_handler.as_mut() {
-                    app_state.player_state.show = true;
-                    handler.play_song_on_playlist(plist.id().to_base62(), &track_to_play);
+                    app_state.show_player_window = true;
+                    handler.play_song_on_playlist(self.playlist.id().to_base62(), &track_to_play);
                 }
             }
 
             if let Some(track_to_remove) = remove_song {
                 if let Some(handler) = app_state.spotify_handler.as_mut() {
-                    handler.remove_track_from_playlist(&plist.id().to_base62(), &track_to_remove);
+                    handler.remove_track_from_playlist(&self.playlist.id().to_base62(), &track_to_remove);
                 }
             }
-        }
-    });
+        });
+    
+        app_state.show_playlist_window = show_window;
+    }
 }
