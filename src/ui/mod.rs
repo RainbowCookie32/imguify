@@ -119,7 +119,11 @@ impl App {
         let mut player_window: Option<PlayerWindow> = None;
         let mut playlist_window: Option<PlaylistWindow> = None;
 
-        let id = imgui.fonts().add_font(&[
+        let ch_font = std::fs::read("fonts/chinese.otf").unwrap_or_else(|_| Vec::new());
+        let jp_font = std::fs::read("fonts/japanese.otf").unwrap_or_else(|_| Vec::new());
+        let kr_font = std::fs::read("fonts/korean.otf").unwrap_or_else(|_| Vec::new());
+
+        let mut fonts = vec![
             FontSource::DefaultFontData {
                 config: Some(
                     FontConfig {
@@ -127,45 +131,61 @@ impl App {
                         ..FontConfig::default()
                     }
                 )
-            },
-            FontSource::TtfData {
-                data: include_bytes!("../../NotoSansCJKsc-Regular.otf"),
-                size_pixels: 13.0,
-                config: Some(
-                    FontConfig {
-                        rasterizer_multiply: 1.75,
-                        size_pixels: 13.0,
-                        glyph_ranges: FontGlyphRanges::chinese_simplified_common(),
-                        ..FontConfig::default()
-                    }
-                )
-            },
-            FontSource::TtfData {
-                data: include_bytes!("../../NotoSansCJKjp-Regular.otf"),
-                size_pixels: 13.0,
-                config: Some(
-                    FontConfig {
-                        rasterizer_multiply: 1.75,
-                        size_pixels: 13.0,
-                        glyph_ranges: FontGlyphRanges::japanese(),
-                        ..FontConfig::default()
-                    }
-                )
-            },
-            FontSource::TtfData {
-                data: include_bytes!("../../NotoSansCJKkr-Regular.otf"),
-                size_pixels: 13.0,
-                config: Some(
-                    FontConfig {
-                        rasterizer_multiply: 1.75,
-                        size_pixels: 13.0,
-                        glyph_ranges: FontGlyphRanges::korean(),
-                        ..FontConfig::default()
-                    }
-                )
             }
-        ]);
+        ];
 
+        if !ch_font.is_empty() {
+            fonts.push(
+                FontSource::TtfData {
+                    data: &ch_font,
+                    size_pixels: 13.0,
+                    config: Some(
+                        FontConfig {
+                            rasterizer_multiply: 1.75,
+                            size_pixels: 13.0,
+                            glyph_ranges: FontGlyphRanges::chinese_simplified_common(),
+                            ..FontConfig::default()
+                        }
+                    )
+                }
+            );
+        }
+
+        if !jp_font.is_empty() {
+            fonts.push(
+                FontSource::TtfData {
+                    data: &jp_font,
+                    size_pixels: 13.0,
+                    config: Some(
+                        FontConfig {
+                            rasterizer_multiply: 1.75,
+                            size_pixels: 13.0,
+                            glyph_ranges: FontGlyphRanges::japanese(),
+                            ..FontConfig::default()
+                        }
+                    )
+                }
+            )
+        }
+
+        if !kr_font.is_empty() {
+            fonts.push(
+                FontSource::TtfData {
+                    data: &kr_font,
+                    size_pixels: 13.0,
+                    config: Some(
+                        FontConfig {
+                            rasterizer_multiply: 1.75,
+                            size_pixels: 13.0,
+                            glyph_ranges: FontGlyphRanges::korean(),
+                            ..FontConfig::default()
+                        }
+                    )
+                }
+            )
+        }
+
+        let id = imgui.fonts().add_font(fonts.as_slice());
         renderer.reload_font_texture(&mut imgui).unwrap();
 
         event_loop.run(move |event, _, control_flow| match event {
