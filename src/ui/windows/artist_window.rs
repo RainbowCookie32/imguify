@@ -1,5 +1,5 @@
 use crate::ui::AppState;
-use crate::spotify::cache::TrackCacheUnit;
+use crate::spotify::api::cache::TrackCacheUnit;
 
 use imgui::*;
 

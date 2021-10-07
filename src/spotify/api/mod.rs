@@ -1,3 +1,5 @@
+pub mod cache;
+
 use std::env;
 use std::sync::{Arc, Mutex};
 
@@ -14,7 +16,7 @@ use rspotify::senum::SearchType;
 use rspotify::blocking::client::Spotify;
 use rspotify::blocking::oauth2::{SpotifyClientCredentials, SpotifyOAuth};
 
-use super::cache::*;
+use cache::*;
 
 pub struct SpotifyAPIHandler {
     api_client: Spotify,

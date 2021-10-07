@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use imgui::*;
+
 use crate::ui::AppState;
 use crate::spotify::PlaylistData;
-
-use imgui::*;
 
 pub struct PlaylistWindow {
     playlist: Arc<PlaylistData>

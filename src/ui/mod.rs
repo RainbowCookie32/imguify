@@ -1,15 +1,5 @@
 mod windows;
 
-use crate::spotify::cache::TrackCacheUnit;
-use crate::spotify::player::PlayerCommand;
-use crate::spotify::{SpotifyHandler, PlaylistData};
-
-use windows::artist_window::ArtistWindow;
-use windows::login_window::LoginWindow;
-use windows::main_window::MainWindow;
-use windows::player_window::PlayerWindow;
-use windows::playlist_window::PlaylistWindow;
-
 use std::sync::Arc;
 use std::sync::mpsc::Sender;
 
@@ -26,6 +16,16 @@ use glium::glutin::event_loop::{ControlFlow, EventLoop};
 
 use rspotify::model::track::FullTrack;
 use rspotify::model::artist::FullArtist;
+
+use windows::artist_window::ArtistWindow;
+use windows::login_window::LoginWindow;
+use windows::main_window::MainWindow;
+use windows::player_window::PlayerWindow;
+use windows::playlist_window::PlaylistWindow;
+
+use crate::spotify::player::PlayerCommand;
+use crate::spotify::api::cache::TrackCacheUnit;
+use crate::spotify::{SpotifyHandler, PlaylistData};
 
 pub struct AppState {
     search_query: String,

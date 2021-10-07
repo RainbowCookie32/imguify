@@ -1,7 +1,7 @@
+use imgui::*;
+
 use crate::ui::AppState;
 use crate::spotify::SpotifyHandler;
-
-use imgui::*;
 
 pub struct LoginWindow {
     username: String,

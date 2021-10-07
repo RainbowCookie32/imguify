@@ -1,7 +1,7 @@
+use imgui::*;
+
 use crate::ui::AppState;
 use crate::spotify::player::PlayerCommand;
-
-use imgui::*;
 
 pub struct MainWindow {
     username: String,

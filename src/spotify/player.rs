@@ -12,7 +12,7 @@ use librespot::playback::config::{AudioFormat, Bitrate, PlayerConfig};
 
 use tokio::sync::mpsc::UnboundedReceiver;
 
-use crate::spotify::cache::TrackCacheUnit;
+use crate::spotify::api::cache::TrackCacheUnit;
 use crate::spotify::{PlaylistData, PlaylistEntry};
 
 pub enum PlayerCommand {
@@ -28,7 +28,7 @@ pub struct PlayerQueue {
     position: usize,
     playlist_id: String,
 
-    tracks_shuffled: Vec<PlaylistEntry>
+    tracks: Vec<PlaylistEntry>
 }
 
 impl PlayerQueue {
@@ -37,7 +37,7 @@ impl PlayerQueue {
             return;
         }
 
-        let mut tracks_shuffled = {
+        let mut tracks = {
             if let Ok(data) = playlist.entries_data.read() {
                 data.clone()
             }
@@ -46,16 +46,16 @@ impl PlayerQueue {
             }
         };
         
-        tracks_shuffled.shuffle(&mut thread_rng());
+        tracks.shuffle(&mut thread_rng());
         
         self.position = 0;
         self.playlist_id = playlist.id().to_base62();
 
-        self.tracks_shuffled = tracks_shuffled;
+        self.tracks = tracks;
     }
 
     pub fn set_position_with_id(&mut self, id: SpotifyId) {
-        let result = self.tracks_shuffled
+        let result = self.tracks
             .iter()
             .enumerate()
             .find(|(_, p)| *p.id() == id.to_base62())
@@ -68,7 +68,7 @@ impl PlayerQueue {
 
     pub fn reshuffle_tracks(&mut self) {
         self.position = 0;
-        self.tracks_shuffled.shuffle(&mut thread_rng());
+        self.tracks.shuffle(&mut thread_rng());
     }
 }
 
@@ -139,7 +139,7 @@ impl PlayerHandler {
                 self.track_playing = true;
             }
             PlayerEvent::EndOfTrack { .. } => {
-                if self.player_queue.position >= self.player_queue.tracks_shuffled.len() {
+                if self.player_queue.position >= self.player_queue.tracks.len() {
                     self.player_queue.reshuffle_tracks();
                 }
                 else {
@@ -166,7 +166,7 @@ impl PlayerHandler {
             }
             PlayerCommand::PrevTrack => {
                 if self.player_queue.position == 0 {
-                    self.player_queue.position = self.player_queue.tracks_shuffled.len() - 1;
+                    self.player_queue.position = self.player_queue.tracks.len() - 1;
                 }
                 else {
                     self.player_queue.position -= 1;
@@ -175,7 +175,7 @@ impl PlayerHandler {
                 self.load_track_and_play();
             }
             PlayerCommand::SkipTrack => {
-                if self.player_queue.position >= self.player_queue.tracks_shuffled.len() {
+                if self.player_queue.position >= self.player_queue.tracks.len() {
                     self.player_queue.reshuffle_tracks();
                 }
                 else {
@@ -194,19 +194,19 @@ impl PlayerHandler {
     }
 
     pub fn get_next_song(&self) -> Option<PlaylistEntry> {
-        self.player_queue.tracks_shuffled.get(self.player_queue.position + 1).cloned()
+        self.player_queue.tracks.get(self.player_queue.position + 1).cloned()
     }
 
     pub fn get_current_song(&self) -> Option<PlaylistEntry> {
-        self.player_queue.tracks_shuffled.get(self.player_queue.position).cloned()
+        self.player_queue.tracks.get(self.player_queue.position).cloned()
     }
 
     pub fn is_queue_loaded(&self) -> bool {
-        !self.player_queue.tracks_shuffled.is_empty()
+        !self.player_queue.tracks.is_empty()
     }
 
     pub fn play_single_track(&mut self, track: TrackCacheUnit) {
-        self.player_queue.tracks_shuffled = vec![
+        self.player_queue.tracks = vec![
             PlaylistEntry {
                 track,
                 artist: String::new()
@@ -224,7 +224,7 @@ impl PlayerHandler {
     }
 
     fn load_track_and_play(&mut self) {
-        if let Some(track_id) = self.player_queue.tracks_shuffled.get(self.player_queue.position) {
+        if let Some(track_id) = self.player_queue.tracks.get(self.player_queue.position) {
             let track_id = track_id.id();
 
             if let Ok(track_id) = SpotifyId::from_base62(track_id) {

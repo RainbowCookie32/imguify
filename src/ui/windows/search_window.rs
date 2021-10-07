@@ -1,6 +1,6 @@
-use crate::ui::AppState;
-
 use imgui::*;
+
+use crate::ui::AppState;
 
 pub fn build(ui: &Ui, app_state: &mut AppState) {
     let mut show_window = app_state.show_search_window;

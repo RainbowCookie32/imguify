@@ -2,12 +2,11 @@
 mod dbus;
 
 pub mod api;
-pub mod cache;
 pub mod player;
 
 use api::SpotifyAPIHandler;
-use cache::APICacheHandler;
 use player::{PlayerCommand, PlayerHandler};
+use api::cache::{APICacheHandler, TrackCacheUnit};
 
 use std::sync::{Arc, Mutex, RwLock};
 use std::sync::mpsc::{Sender, Receiver};
@@ -25,8 +24,6 @@ use librespot::metadata::{Metadata, Playlist};
 
 use rspotify::model::track::FullTrack;
 use rspotify::model::artist::FullArtist;
-
-use cache::TrackCacheUnit;
 
 pub struct SpotifyHandler {
     rt: Runtime,
