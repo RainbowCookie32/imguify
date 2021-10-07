@@ -25,14 +25,20 @@ impl PlayerWindow {
     pub fn draw(&mut self, ui: &Ui, app_state: &mut AppState) {
         if let Some(handler) = app_state.spotify_handler.as_ref() {
             if handler.is_loaded() {
+                let api = handler.get_api_handler();
+
                 if let Some(track) = handler.get_current_song() {
-                    self.current_track = track.title().to_string();
-                    self.current_artist = track.artist().to_string();
+                    if let Ok(track) = api.get_track(track.to_base62()) {
+                        self.current_track = track.name().to_string();
+                        self.current_artist = track.artists()[0].to_string();
+                    }
                 }
     
                 if let Some(track) = handler.get_next_song() {
-                    self.next_track = track.title().to_string();
-                    self.next_artist = track.artist().to_string();
+                    if let Ok(track) = api.get_track(track.to_base62()) {
+                        self.next_track = track.name().to_string();
+                        self.next_artist = track.artists()[0].to_string();
+                    }
                 }
             }
         }

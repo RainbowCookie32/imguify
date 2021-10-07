@@ -6,7 +6,7 @@ pub mod player;
 
 use api::SpotifyAPIHandler;
 use player::{PlayerCommand, PlayerHandler};
-use api::cache::{APICacheHandler, TrackCacheUnit};
+use api::cache::{APICacheHandler, TrackInfo};
 
 use std::sync::{Arc, Mutex, RwLock};
 use std::sync::mpsc::{Sender, Receiver};
@@ -87,7 +87,7 @@ impl SpotifyHandler {
         results
     }
 
-    pub fn get_next_song(&self) -> Option<PlaylistEntry> {
+    pub fn get_next_song(&self) -> Option<SpotifyId> {
         if let Ok(lock) = self.player_handler.try_lock() {
             lock.get_next_song()
         }
@@ -96,7 +96,7 @@ impl SpotifyHandler {
         }
     }
 
-    pub fn get_current_song(&self) -> Option<PlaylistEntry> {
+    pub fn get_current_song(&self) -> Option<SpotifyId> {
         if let Ok(lock) = self.player_handler.try_lock() {
             lock.get_current_song()
         }
@@ -154,7 +154,7 @@ impl SpotifyHandler {
         }
     }
 
-    pub fn play_single_track(&mut self, track: TrackCacheUnit) {
+    pub fn play_single_track(&mut self, track: SpotifyId) {
         if let Ok(mut lock) = self.player_handler.lock() {
             lock.play_single_track(track);
         }
@@ -164,7 +164,7 @@ impl SpotifyHandler {
         if let Some(plist) = self.playlist_data.iter().find(|p| p.id().to_base62() == playlist) {
             if let Ok(mut lock) = self.player_handler.lock() {
                 if let Ok(track) = SpotifyId::from_base62(track) {
-                    lock.play_track_from_playlist(plist.clone(), track);
+                    lock.play_track_from_playlist(plist.entries.clone(), track);
                 }
             }
         }
@@ -192,7 +192,7 @@ impl SpotifyHandler {
         Vec::new()
     }
 
-    pub fn get_artist_data(&mut self, artist: String) -> Vec<TrackCacheUnit> {
+    pub fn get_artist_data(&mut self, artist: String) -> Vec<TrackInfo> {
         let mut results = Vec::new();
 
         if let Some(albums) = self.api_handler.get_all_albums_for_artist(artist) {
@@ -257,6 +257,10 @@ impl PlaylistData {
         }
     }
 
+    pub fn entries(&self) -> Vec<SpotifyId> {
+        self.entries.clone()
+    }
+
     /// Get a reference to the playlist data's entries data.
     pub fn entries_data(&self) -> &Arc<RwLock<Vec<PlaylistEntry>>> {
         &self.entries_data
@@ -270,7 +274,7 @@ impl PlaylistData {
 
 #[derive(Clone)]
 pub struct PlaylistEntry {
-    track: TrackCacheUnit,
+    track: TrackInfo,
     artist: String
 }
 

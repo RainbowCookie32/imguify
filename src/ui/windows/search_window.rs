@@ -1,4 +1,5 @@
 use imgui::*;
+use librespot::core::spotify_id::SpotifyId;
 
 use crate::ui::AppState;
 
@@ -58,10 +59,10 @@ pub fn build(ui: &Ui, app_state: &mut AppState) {
             if let Some(id) = track.id.as_ref() {
                 if ui.button(format!("Play##{}", id)) {
                     if let Some(handler) = app_state.spotify_handler.as_mut() {
-                        if let Ok(track) = handler.get_api_handler().get_track(id.clone()) {
-                            handler.play_single_track(track);
-                            app_state.show_player_window = true;
-                        }
+                        let id = SpotifyId::from_base62(id).unwrap();
+                        
+                        handler.play_single_track(id);
+                        app_state.show_player_window = true;
                     }
                 }
             }

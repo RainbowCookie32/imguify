@@ -39,7 +39,7 @@ impl MainWindow {
                                 let plist = handler.get_playlist(idx).unwrap();
                                 let api_handler = handler.get_api_handler();
                             
-                                if let Err(error) = tx.send(PlayerCommand::StartPlaylist(plist.clone())) {
+                                if let Err(error) = tx.send(PlayerCommand::StartPlaylist(plist.entries().clone())) {
                                     println!("{}", error.to_string());
                                 }
     

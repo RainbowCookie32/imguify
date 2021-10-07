@@ -8,8 +8,8 @@ use rspotify::model::track::FullTrack;
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct APICacheHandler {
-    album_cache: HashMap<String, AlbumCacheUnit>,
-    track_cache: HashMap<String, TrackCacheUnit>
+    album_cache: HashMap<String, AlbumInfo>,
+    track_cache: HashMap<String, TrackInfo>
 }
 
 impl APICacheHandler {
@@ -25,13 +25,13 @@ impl APICacheHandler {
         }
     }
 
-    pub fn try_get_album(&self, id: &str) -> Option<AlbumCacheUnit> {
+    pub fn try_get_album(&self, id: &str) -> Option<AlbumInfo> {
         self.album_cache.get(id).cloned()
     }
 
-    pub fn add_album_unit(&mut self, album: FullAlbum) -> AlbumCacheUnit {
+    pub fn add_album_unit(&mut self, album: FullAlbum) -> AlbumInfo {
         let id = album.id.clone();
-        let unit = AlbumCacheUnit::from_api_data(album);
+        let unit = AlbumInfo::from_api_data(album);
 
         self.album_cache.insert(id, unit.clone());
         self.write_cache_data();
@@ -39,13 +39,13 @@ impl APICacheHandler {
         unit
     }
 
-    pub fn try_get_track(&self, id: &str) -> Option<TrackCacheUnit> {
+    pub fn try_get_track(&self, id: &str) -> Option<TrackInfo> {
         self.track_cache.get(id).cloned()
     }
 
-    pub fn add_track_unit(&mut self, track: FullTrack) -> Option<TrackCacheUnit> {
+    pub fn add_track_unit(&mut self, track: FullTrack) -> Option<TrackInfo> {
         let id = track.id.clone().unwrap_or_else(String::new);
-        let unit = TrackCacheUnit::from_api_data(track);
+        let unit = TrackInfo::from_api_data(track);
 
         if let Some(unit) = unit.as_ref() {
             self.track_cache.insert(id, unit.clone());
@@ -71,7 +71,7 @@ impl APICacheHandler {
 }
 
 #[derive(Clone, Default, Deserialize, Serialize)]
-pub struct AlbumCacheUnit {
+pub struct AlbumInfo {
     id: String,
     name: String,
     
@@ -79,9 +79,9 @@ pub struct AlbumCacheUnit {
     artists: Vec<String>
 }
 
-impl AlbumCacheUnit {
-    pub fn from_api_data(album: FullAlbum) -> AlbumCacheUnit {
-        AlbumCacheUnit {
+impl AlbumInfo {
+    pub fn from_api_data(album: FullAlbum) -> AlbumInfo {
+        AlbumInfo {
             id: album.id,
             name: album.name,
             
@@ -90,14 +90,13 @@ impl AlbumCacheUnit {
         }
     }
 
-    /// Get a reference to the album cache unit's tracks.
     pub fn tracks(&self) -> &Vec<String> {
         &self.tracks
     }
 }
 
 #[derive(Clone, Default, Deserialize, Serialize)]
-pub struct TrackCacheUnit {
+pub struct TrackInfo {
     id: String,
     name: String,
     duration: u32,
@@ -106,11 +105,11 @@ pub struct TrackCacheUnit {
     artists: Vec<String>
 }
 
-impl TrackCacheUnit {
-    pub fn from_api_data(track: FullTrack) -> Option<TrackCacheUnit> {
+impl TrackInfo {
+    pub fn from_api_data(track: FullTrack) -> Option<TrackInfo> {
         if let (Some(id), Some(album)) = (track.id, track.album.id) {
             Some(
-                TrackCacheUnit {
+                TrackInfo {
                     id,
                     name: track.name,
                     duration: track.duration_ms,
@@ -125,27 +124,22 @@ impl TrackCacheUnit {
         }
     }
 
-    /// Get a reference to the track cache unit's id.
     pub fn id(&self) -> &String {
         &self.id
     }
 
-    /// Get a reference to the track cache unit's name.
     pub fn name(&self) -> &String {
         &self.name
     }
 
-    /// Get a reference to the track cache unit's duration.
     pub fn duration(&self) -> &u32 {
         &self.duration
     }
 
-    /// Get a reference to the track cache unit's artists.
     pub fn artists(&self) -> &Vec<String> {
         &self.artists
     }
 
-    /// Get a reference to the track cache unit's popularity.
     pub fn popularity(&self) -> &u32 {
         &self.popularity
     }

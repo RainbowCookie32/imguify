@@ -24,14 +24,14 @@ use windows::player_window::PlayerWindow;
 use windows::playlist_window::PlaylistWindow;
 
 use crate::spotify::player::PlayerCommand;
-use crate::spotify::api::cache::TrackCacheUnit;
+use crate::spotify::api::cache::TrackInfo;
 use crate::spotify::{SpotifyHandler, PlaylistData};
 
 pub struct AppState {
     search_query: String,
     search_results_tracks: Vec<FullTrack>,
     search_results_artists: Vec<FullArtist>,
-    search_artist_page_tracks: Vec<TrackCacheUnit>,
+    search_artist_page_tracks: Vec<TrackInfo>,
 
     show_artist_window: bool,
     show_player_window: bool,

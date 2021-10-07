@@ -1,15 +1,16 @@
 use crate::ui::AppState;
-use crate::spotify::api::cache::TrackCacheUnit;
+use crate::spotify::api::cache::TrackInfo;
 
 use imgui::*;
+use librespot::core::spotify_id::SpotifyId;
 
 pub struct ArtistWindow {
     artist_name: String,
-    artist_tracks: Vec<TrackCacheUnit>
+    artist_tracks: Vec<TrackInfo>
 }
 
 impl ArtistWindow {
-    pub fn init(artist_name: String, artist_tracks: Vec<TrackCacheUnit>) -> ArtistWindow {
+    pub fn init(artist_name: String, artist_tracks: Vec<TrackInfo>) -> ArtistWindow {
         ArtistWindow {
             artist_name,
             artist_tracks
@@ -53,7 +54,7 @@ impl ArtistWindow {
                     if ui.button(format!("Play##{}", entry.id())) {
                         if let Some(handler) = app_state.spotify_handler.as_mut() {
                             app_state.show_player_window = true;
-                            handler.play_single_track(entry.clone());
+                            handler.play_single_track(SpotifyId::from_base62(entry.id()).unwrap());
                         }
                     }
                 }

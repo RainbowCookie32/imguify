@@ -12,45 +12,26 @@ use librespot::playback::config::{AudioFormat, Bitrate, PlayerConfig};
 
 use tokio::sync::mpsc::UnboundedReceiver;
 
-use crate::spotify::api::cache::TrackCacheUnit;
-use crate::spotify::{PlaylistData, PlaylistEntry};
-
 pub enum PlayerCommand {
     PlayPause,
     PrevTrack,
     SkipTrack,
 
-    StartPlaylist(Arc<PlaylistData>)
+    StartPlaylist(Vec<SpotifyId>)
 }
 
 #[derive(Default)]
 pub struct PlayerQueue {
     position: usize,
-    playlist_id: String,
-
-    tracks: Vec<PlaylistEntry>
+    tracks: Vec<SpotifyId>
 }
 
 impl PlayerQueue {
-    pub fn fill_data(&mut self, playlist: Arc<PlaylistData>) {
-        if self.playlist_id == playlist.id().to_base62() {
-            return;
-        }
-
-        let mut tracks = {
-            if let Ok(data) = playlist.entries_data.read() {
-                data.clone()
-            }
-            else {
-                Vec::new()
-            }
-        };
-        
+    pub fn init_queue(&mut self, tracks: Vec<SpotifyId>) {
+        let mut tracks = tracks;
         tracks.shuffle(&mut thread_rng());
         
         self.position = 0;
-        self.playlist_id = playlist.id().to_base62();
-
         self.tracks = tracks;
     }
 
@@ -58,7 +39,7 @@ impl PlayerQueue {
         let result = self.tracks
             .iter()
             .enumerate()
-            .find(|(_, p)| *p.id() == id.to_base62())
+            .find(|(_, p)| *p.to_base62() == id.to_base62())
         ;
 
         if let Some((pos, _)) = result {
@@ -186,18 +167,18 @@ impl PlayerHandler {
             }
             PlayerCommand::StartPlaylist(p) => {
                 self.player_queue.position = 0;
-                self.player_queue.fill_data(p);
+                self.player_queue.init_queue(p);
 
                 self.load_track_and_play();
             }
         }
     }
 
-    pub fn get_next_song(&self) -> Option<PlaylistEntry> {
+    pub fn get_next_song(&self) -> Option<SpotifyId> {
         self.player_queue.tracks.get(self.player_queue.position + 1).cloned()
     }
 
-    pub fn get_current_song(&self) -> Option<PlaylistEntry> {
+    pub fn get_current_song(&self) -> Option<SpotifyId> {
         self.player_queue.tracks.get(self.player_queue.position).cloned()
     }
 
@@ -205,19 +186,13 @@ impl PlayerHandler {
         !self.player_queue.tracks.is_empty()
     }
 
-    pub fn play_single_track(&mut self, track: TrackCacheUnit) {
-        self.player_queue.tracks = vec![
-            PlaylistEntry {
-                track,
-                artist: String::new()
-            }
-        ];
-
+    pub fn play_single_track(&mut self, track: SpotifyId) {
+        self.player_queue.tracks = vec![track];
         self.load_track_and_play();
     }
 
-    pub fn play_track_from_playlist(&mut self, playlist: Arc<PlaylistData>, track: SpotifyId) {
-        self.player_queue.fill_data(playlist);
+    pub fn play_track_from_playlist(&mut self, playlist: Vec<SpotifyId>, track: SpotifyId) {
+        self.player_queue.init_queue(playlist);
         self.player_queue.set_position_with_id(track);
 
         self.load_track_and_play();
@@ -225,14 +200,10 @@ impl PlayerHandler {
 
     fn load_track_and_play(&mut self) {
         if let Some(track_id) = self.player_queue.tracks.get(self.player_queue.position) {
-            let track_id = track_id.id();
+            self.player.load(*track_id, true, 0);
+            self.player.play();
 
-            if let Ok(track_id) = SpotifyId::from_base62(track_id) {
-                self.player.load(track_id, true, 0);
-                self.player.play();
-    
-                self.track_playing = true;
-            }
+            self.track_playing = true;
         }
     }
 }
